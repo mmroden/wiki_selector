@@ -1,9 +1,6 @@
 import lzma
 
 
-wiki_data_files = ('langlinks.xz', 'pagelinks.xz', 'pages.xz',
-                   'pageviews.xz', 'ratings.xz', 'redirects.xz')
-
 class LankLink:
     '''
     A class that will store the language links
