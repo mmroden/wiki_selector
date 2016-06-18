@@ -25,6 +25,11 @@ def read_file(file_name, encoding='utf-8', page_id_index=0):
 
 
 def check_sanity(all_files):
+    '''
+    This function will make sure that the original pages are present in the 'all_pages' collections
+    :param all_files:
+    :return:
+    '''
     page_files = read_file(os.path.join(config.which_wiki, 'pages.lzma'), page_id_index=0)
     count = 0
     main_count = 0
@@ -32,10 +37,7 @@ def check_sanity(all_files):
         count += 1
         if not int(v[0][-1]):
             if k in all_files:
-                try:
-                    main_count += 1
-                except:
-                    pass
+                main_count += 1
     print("All pages: {}, page non-redirect count: {}".format(len(all_files),
                                                               main_count))
     assert (main_count - len(all_files) < config.acceptable_epsilon)
@@ -53,12 +55,12 @@ def prep_files():
         ratings: page_title project quality importance
         all: page_title page_id page_size pagelinks_count langlinks_count pageviews_count [rating1] [rating2] ...
 
-    The resulting object will be a named tuple:
-    pages[page_id] = ("page_title": page_title, "view_count":view_count,
+    All that's returned from this is the 'all' collection, indexed by page_id
     :return: hashes by page_ids
     '''
     all_files = read_file(os.path.join(config.which_wiki, 'all.lzma'), page_id_index=1)
     check_sanity(all_files)
+    return all_files
 
 
 def main():
