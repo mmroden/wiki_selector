@@ -82,15 +82,18 @@ def cxCounter(ind1, ind2, indpb):
     Note that the individuals have decorations at this point, so it's not
     feasible to simple swap numbers"""
     if random.random() > indpb:
-        ind1 = ind1[0]
-        ind2 = ind2[0]
-        randint1 = random.randint(0, len(ind1))
-        randint2 = random.randint(0, len(ind2))
-        # removing dupes with the list/set transformation
-        new_ind1 = list(set(ind1[0:randint1] + ind2[randint2:len(ind2)]))
-        new_ind2 = list(set(ind2[0:randint2] + ind1[randint1:len(ind1)]))
-        return new_ind1, new_ind2
-        #return ind2, ind1
+        # first, choose a length that is lower than either indiv's length
+        swap_len = random.randint(0, min(len(ind1[0]), len(ind2[0]))-1)
+        # now choose a start spot for each array
+        start1 = random.randint(0, len(ind1[0]) - swap_len - 1)
+        start2 = random.randint(0, len(ind2[0]) - swap_len - 1)
+        for x in range(swap_len):
+            idx1 = x + start1
+            idx2 = x + start2
+            tmp1 = ind1[0][idx1]
+            ind1[0][idx1] = ind2[0][idx2]
+            ind2[0][idx2] = tmp1
+        return ind1, ind2
     else:
         return ind1, ind2
 
