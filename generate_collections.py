@@ -187,7 +187,7 @@ def dedupe_hof(hof):
 
 
 def main():
-    NGEN = 1
+    NGEN = 100
     MU = 100
     LAMBDA = 200
     CXPB = 0.3
