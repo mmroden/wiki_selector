@@ -4,6 +4,7 @@ exactly 15.05$ worth of appetizers, as fast as possible."""
 import random
 from operator import attrgetter
 from collections import Counter
+from operator import itemgetter
 from info_prep import prep_files
 import config
 from scoop import futures  # to make things multicore
@@ -31,7 +32,7 @@ def create_dummy_data_fast():
     for testing purposes and rapid iteration, make a structure similar to all_pages
     but just not as big.  Helps with debugging what happens after files are loaded
     """
-    dummy_wiki_size = 50000
+    dummy_wiki_size = 500
     dummy_wiki = {}
     for i in range(dummy_wiki_size):
         idx = i * 100
@@ -150,45 +151,45 @@ toolbox.register("map", futures.map)  # to make things multicore
 # output functions
 # -------------------------
 def write_lines_by_key(key, n, hof, of):
-    sorted_hof = sorted(hof, key=itemgetter(key), reverse=True)
-    if key == PAGE_SIZE_INDEX:
+    will_reverse = False if key == 1 else True
+    sorted_hof = sorted(hof, key=itemgetter(key), reverse=will_reverse)
+    if key - 1 == PAGE_SIZE_INDEX:
         of.write("Top {} article sets by page size:\n\n".format(n))
-    if key == PAGE_LINKS_INDEX:
+    if key - 1 == PAGE_LINKS_INDEX:
         of.write("Top {} article sets by page links:\n\n".format(n))
-    if key == LANG_LINKS_INDEX:
+    if key - 1 == LANG_LINKS_INDEX:
         of.write("Top {} article sets by language links:\n\n".format(n))
-    if key == PAGE_VIEWS_INDEX:
+    if key - 1 == PAGE_VIEWS_INDEX:
         of.write("Top {} article sets by page views:\n\n".format(n))
     for count in range(n):
         indiv = sorted_hof[count]
-        scores = evaluate_articles(indiv, config.target_size)
         of.write("Rank: {}\tArticle count: {}\tSize diff: {}\tpage_links: {}\tlang_links: {}\tpage views: {}\nArticles:{}\n\n".format(
-            count + 1, len(indiv[0]), scores[0], scores[1], scores[2], scores[3], indiv[0]))
+            count + 1, len(indiv[0]), indiv[1], indiv[2], indiv[3], indiv[4], indiv[0]))
 
 
-def print_top_n(hof, n, trial_string):
-    with open(trial_string, 'w') as of:
+def print_top_n(hall_of_fame, n, file_name):
+    with open(file_name, 'w') as of:
         real_n = n
-        if n > len(hof):
-            real_n = len(hof)
-        for count in range(2, 5):
-            write_lines_by_key(count, real_n, hof, of)
+        if n > len(hall_of_fame):
+            real_n = len(hall_of_fame)
+        for count in range(1, 5):
+            write_lines_by_key(count, real_n, hall_of_fame, of)
             of.write("\n\n")
 
 
 def dedupe_hof(hof):
     article_set_dict = {}
     for indiv in hof:
-        names = ' '.join(sorted(article_set) for article_set in indiv[0])
+        names = tuple(set(indiv[0]))
         if names not in article_set_dict:
             article_set_dict[names] = indiv
-    return list(article_set_dict[team] for team in article_set_dict)
+    return list(article_set_dict[articles] for articles in article_set_dict)
 
 
 def main():
-    NGEN = 4
-    MU = 1000
-    LAMBDA = 2000
+    NGEN = 1
+    MU = 100
+    LAMBDA = 200
     CXPB = 0.3
     MUTPB = 0.6
 
@@ -217,4 +218,12 @@ if __name__ == "__main__":
     trial_string = "Trial-" + time.ctime().replace(' ', '-').replace(':', '-') + ".txt"
     pop, stats, hof = main()
     print("\n And Now, for the hall of fame:")
-    print_top_n(dedupe_hof(hof), config.max_num_candidate_sets, trial_string)
+    deduped_hof = dedupe_hof(hof)
+    to_print_hof = []
+    count = 0
+    for article_set in deduped_hof:
+        scores = evaluate_articles(article_set, config.target_size)
+        to_print_hof += [((tuple(article_set[0]), scores[0], scores[1], scores[2], scores[3]))]
+        # tuple where first entry is the article list, then the score tuple is the second entry
+        # has the 'none' to align the indeces with the original scoring in the 'all' files
+    print_top_n(to_print_hof, config.max_num_candidate_sets, trial_string)
