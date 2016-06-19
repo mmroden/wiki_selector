@@ -10,6 +10,7 @@ def split_iter(string):
 
 
 def read_file(file_name, encoding='utf-8', page_id_index=0):
+    """This function will read in a file and put it into a hash for fast access"""
     with lzma.open(file_name) as page_file:
         lines = page_file.read().decode(encoding)
 
@@ -17,9 +18,11 @@ def read_file(file_name, encoding='utf-8', page_id_index=0):
     parsed_lines = {}
     for line in split_iter(lines):
         tup = tuple(line.split('\t'))
-        if tup[page_id_index] not in parsed_lines:
-            parsed_lines[tup[page_id_index]] = []
-        parsed_lines[tup[page_id_index]] += [tup]
+        # restore these next three lines if you think there can be id collisions
+        # if tup[page_id_index] not in parsed_lines:
+        #    parsed_lines[tup[page_id_index]] = []
+        #parsed_lines[tup[page_id_index]] += [tup]
+        parsed_lines[tup[page_id_index]] = tup
 
     return parsed_lines
 
@@ -35,7 +38,9 @@ def check_sanity(all_files):
     main_count = 0
     for k, v in page_files.items():
         count += 1
-        if not int(v[0][-1]):
+        if not int(v[-1]):
+            # the last entry of the pages file is whether or not this page is a redirect;
+            # we ignore redirects
             if k in all_files:
                 main_count += 1
     print("All pages: {}, page non-redirect count: {}".format(len(all_files),

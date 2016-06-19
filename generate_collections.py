@@ -19,7 +19,22 @@ from deap import base
 from deap import creator
 from deap import tools
 
-ALL_FILES = prep_files()
+
+def create_dummy_data_fast():
+    """
+    for testing purposes and rapid iteration, make a structure similar to all_pages
+    but just not as big.  Helps with debugging what happens after files are loaded
+    """
+    dummy_wiki_size = 1000
+    dummy_wiki = {}
+    for i in range(dummy_wiki_size):
+        idx = i * 100
+        dummy_wiki[idx] = (idx, "dummy{}".format(idx), random.randint(0,100),
+                           random.randint(0,100), random.randint(0,100),
+                           random.randint(0,100))
+    return dummy_wiki
+
+ALL_FILES = create_dummy_data_fast()  # prep_files()
 ALL_FILES_KEYS = list(ALL_FILES.keys())
 ALL_FILES_KEYSET = set(ALL_FILES_KEYS)
 PAGE_LINKS_INDEX = 3
@@ -27,23 +42,24 @@ LANG_LINKS_INDEX = 4
 PAGE_VIEWS_INDEX = 5
 PAGE_SIZE_INDEX = 2
 
-IND_INIT_SIZE=10000
 
 creator.create("Fitness", base.Fitness, weights=(-1.0, 1.0, 1.0, 1.0))
-creator.create("Individual", Counter, fitness=creator.Fitness)
+creator.create("ArticleSet", list, fitness=creator.Fitness)
 
 
 def init_selection():
     """  Choose a randomly sized subset of articles """
-    the_keys = random.shuffle(list(ALL_FILES.keys()))
-    return the_keys[:random.randint(10, len(the_keys))]
-
+    the_keys = ALL_FILES_KEYS.copy()
+    random.shuffle(the_keys)
+    output = the_keys[:random.randint(0, len(the_keys))]
+    # print('initial selection: {}'.format(output))
+    return output
 
 toolbox = base.Toolbox()
 toolbox.register('init_selection', init_selection)
-toolbox.register("individual", tools.initCycle, creator.individual,
-                 (toolbox.init_selection,), n=1)
-toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+toolbox.register("articles", tools.initCycle, creator.ArticleSet,
+                 (toolbox.init_selection,), n=1)  # makes the initial list inside a tuple
+toolbox.register("population", tools.initRepeat, list, toolbox.articles)
 
 
 def evaluate_articles(individual, target_size):
@@ -51,8 +67,9 @@ def evaluate_articles(individual, target_size):
     taken by the order if the chef can cook everything in parallel."""
 
     # go through and don't count the dupes
+    individual = individual[0]  # because it's been tupled
+    # print(individual)
     indiv_set = set(individual)
-    print(individual[0:10])
     page_links = sum(ALL_FILES[entry][PAGE_LINKS_INDEX] for entry in indiv_set)
     lang_links = sum(ALL_FILES[entry][LANG_LINKS_INDEX] for entry in indiv_set)
     page_views = sum(ALL_FILES[entry][PAGE_VIEWS_INDEX] for entry in indiv_set)
@@ -61,27 +78,43 @@ def evaluate_articles(individual, target_size):
 
 
 def cxCounter(ind1, ind2, indpb):
-    """Swaps the number of particular items between two individuals"""
+    """Swaps the number of particular items between two individuals.
+    Note that the individuals have decorations at this point, so it's not
+    feasible to simple swap numbers"""
+    # ind1 = ind1[0]
+    # ind2 = ind2[0]
     if random.random() > indpb:
-        randint1 = random.randint(0, len(ind1))
-        randint2 = random.randint(0, len(ind2))
+        #randint1 = random.randint(0, len(ind1))
+        #randint2 = random.randint(0, len(ind2))
         # removing dupes with the list/set transformation
-        new_ind1 = list(set(ind1[0:randint1] + ind2[randint2:len(ind2)]))
-        new_ind2 = list(set(ind2[0:randint2] + ind1[randint1:len(ind1)]))
-        return new_ind1, new_ind2
+        #new_ind1 = list(set(ind1[0:randint1] + ind2[randint2:len(ind2)]))
+        #new_ind2 = list(set(ind2[0:randint2] + ind1[randint1:len(ind1)]))
+        #return new_ind1, new_ind2
+        return ind2, ind1
     else:
         return ind1, ind2
 
 
 def mutCounter(individual):
     """Adds or remove an item from an individual"""
+    # individual = individual[0]
     if random.random() > 0.5:
-        the_keys = ALL_FILES_KEYSET
-        indiv_set = set(individual)
+        the_keys = ALL_FILES_KEYSET.copy()
+        indiv_set = set(individual[0])
         missing = list(the_keys - indiv_set)
-        individual[random.randint(0,len(individual))] = missing[random.randint(0,len(missing))]
+        individual[0] = list(indiv_set)
+        indiv_idx = random.randint(0,len(individual[0])-1)
+        missing_idx = random.randint(0,len(missing)-1)
+        try:
+            if len(missing) and len(individual[0]):
+                individual[0][indiv_idx] = missing[missing_idx]
+        except:
+            print("Missing: ", missing, "Individual: ", individual,
+                  "M idx", missing_idx, "indiv_idx", indiv_idx,
+                  len(missing), len(individual[0]))
+            assert False
     else:
-        individual.remove(individual[random.randint(0,len(individual))])
+        individual[0].remove(individual[0][random.randint(0,len(individual))])
     return individual,
 
 
