@@ -6,11 +6,12 @@ from operator import attrgetter
 from collections import Counter
 from info_prep import prep_files
 import config
+from scoop import futures  # to make things multicore
 
 # We delete the reduction function of the Counter because it doesn't copy added
 # attributes. Because we create a class that inherit from the Counter, the
 # fitness attribute was not copied by the deepcopy.
-del Counter.__reduce__
+# del Counter.__reduce__
 
 import numpy
 
@@ -18,14 +19,19 @@ from deap import algorithms
 from deap import base
 from deap import creator
 from deap import tools
+import time
 
+
+# -------------------------
+# Dummy data functions, for testing/debugging GA functions
+# -------------------------
 
 def create_dummy_data_fast():
     """
     for testing purposes and rapid iteration, make a structure similar to all_pages
     but just not as big.  Helps with debugging what happens after files are loaded
     """
-    dummy_wiki_size = 1000
+    dummy_wiki_size = 50000
     dummy_wiki = {}
     for i in range(dummy_wiki_size):
         idx = i * 100
@@ -33,6 +39,11 @@ def create_dummy_data_fast():
                            random.randint(0,100), random.randint(0,100),
                            random.randint(0,100))
     return dummy_wiki
+
+
+# --------------------------
+# calling in prepped data
+# --------------------------
 
 ALL_FILES = create_dummy_data_fast()  # prep_files()
 ALL_FILES_KEYS = list(ALL_FILES.keys())
@@ -42,6 +53,10 @@ LANG_LINKS_INDEX = 4
 PAGE_VIEWS_INDEX = 5
 PAGE_SIZE_INDEX = 2
 
+
+# ----------------------------
+# GA functions
+# ----------------------------
 
 creator.create("Fitness", base.Fitness, weights=(-1.0, 1.0, 1.0, 1.0))
 creator.create("ArticleSet", list, fitness=creator.Fitness)
@@ -128,11 +143,52 @@ toolbox.register("mate", cxCounter, indpb=0.5)
 toolbox.register("mutate", mutCounter)
 toolbox.register("select", tools.selNSGA2)
 
+toolbox.register("map", futures.map)  # to make things multicore
+
+
+# -------------------------
+# output functions
+# -------------------------
+def write_lines_by_key(key, n, hof, of):
+    sorted_hof = sorted(hof, key=itemgetter(key), reverse=True)
+    if key == PAGE_SIZE_INDEX:
+        of.write("Top {} teams by score:\n\n".format(n))
+    if key == PAGE_LINKS_INDEX:
+        of.write("Top {} teams by team score:\n\n".format(n))
+    if key == LANG_LINKS_INDEX:
+        of.write("Top {} teams by combined score:\n\n".format(n))
+    if key == PAGE_VIEWS_INDEX:
+        of.write("Top {} teams by touches:\n\n".format(n))
+    for count in range(n):
+        indiv = sorted_hof[count]
+        scores = evaluate_articles(indiv, config.target_size)
+        of.write("Rank: {}\tArticle count: {}\tSize diff: {}\tpage_links: {}\tlang_links: {}\tpage views: {}\nArticles:{}\n\n".format(
+            count + 1, len(indiv[0]), scores[0], scores[1], scores[2], scores[3], indiv[0]))
+
+
+def print_top_n(hof, n, trial_string):
+    with open(trial_string, 'w') as of:
+        real_n = n
+        if n > len(hof):
+            real_n = len(hof)
+        for count in range(2, 5):
+            write_lines_by_key(count, real_n, hof, of)
+            of.write("\n\n")
+
+
+def dedupe_hof(hof):
+    article_set_dict = {}
+    for indiv in hof:
+        names = ' '.join(sorted(article_set) for article_set in indiv[0])
+        if names not in article_set_dict:
+            article_set_dict[names] = indiv
+    return list(article_set_dict[team] for team in article_set_dict)
+
 
 def main():
     NGEN = 4
-    MU = 100
-    LAMBDA = 200
+    MU = 1000
+    LAMBDA = 2000
     CXPB = 0.3
     MUTPB = 0.6
 
@@ -158,15 +214,7 @@ def main():
 
 
 if __name__ == "__main__":
-    _, _, hof = main()
+    trial_string = "Trial-" + time.ctime().replace(' ', '-').replace(':', '-') + ".txt"
+    pop, stats, hof = main()
     print("\n And Now, for the hall of fame:")
-    prev_seen = set()
-    for indiv in hof:
-        if tuple(indiv[0]) not in prev_seen:
-            prev_seen.add(tuple(indiv[0]))
-            scores = evaluate_articles(indiv, config.target_size)
-            print("\nIndividual stats:  Article count: {} Size diff: {} page_links: {} lang_links: {} page views:{}".format(len(indiv[0]),
-                                                                                                                                scores[0],
-                                                                                                                                scores[1],
-                                                                                                                                scores[2],
-                                                                                                                                scores[3]))
+    print_top_n(dedupe_hof(hof), config.max_num_candidate_sets, trial_string)
