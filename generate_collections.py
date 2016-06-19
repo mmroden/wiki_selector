@@ -81,16 +81,16 @@ def cxCounter(ind1, ind2, indpb):
     """Swaps the number of particular items between two individuals.
     Note that the individuals have decorations at this point, so it's not
     feasible to simple swap numbers"""
-    # ind1 = ind1[0]
-    # ind2 = ind2[0]
     if random.random() > indpb:
-        #randint1 = random.randint(0, len(ind1))
-        #randint2 = random.randint(0, len(ind2))
+        ind1 = ind1[0]
+        ind2 = ind2[0]
+        randint1 = random.randint(0, len(ind1))
+        randint2 = random.randint(0, len(ind2))
         # removing dupes with the list/set transformation
-        #new_ind1 = list(set(ind1[0:randint1] + ind2[randint2:len(ind2)]))
-        #new_ind2 = list(set(ind2[0:randint2] + ind1[randint1:len(ind1)]))
-        #return new_ind1, new_ind2
-        return ind2, ind1
+        new_ind1 = list(set(ind1[0:randint1] + ind2[randint2:len(ind2)]))
+        new_ind2 = list(set(ind2[0:randint2] + ind1[randint1:len(ind1)]))
+        return new_ind1, new_ind2
+        #return ind2, ind1
     else:
         return ind1, ind2
 
@@ -109,6 +109,7 @@ def mutCounter(individual):
             if len(missing) and len(individual[0]):
                 individual[0][indiv_idx] = missing[missing_idx]
         except:
+            # debugging messages I'll leave in for now
             print("Missing: ", missing, "Individual: ", individual,
                   "M idx", missing_idx, "indiv_idx", indiv_idx,
                   len(missing), len(individual[0]))
