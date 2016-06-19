@@ -106,19 +106,20 @@ def mutCounter(individual):
         indiv_set = set(individual[0])
         missing = list(the_keys - indiv_set)
         individual[0] = list(indiv_set)
-        indiv_idx = random.randint(0,len(individual[0])-1)
-        missing_idx = random.randint(0,len(missing)-1)
+        indiv_idx = missing_idx = 0
         try:
+            indiv_idx = random.randint(0,len(individual[0])-1)
+            missing_idx = random.randint(0,len(missing)-1)
             if len(missing) and len(individual[0]):
                 individual[0][indiv_idx] = missing[missing_idx]
         except:
             # debugging messages I'll leave in for now
-            print("Missing: ", missing, "Individual: ", individual,
-                  "M idx", missing_idx, "indiv_idx", indiv_idx,
-                  len(missing), len(individual[0]))
-            assert False
+            # print("Missing: ", missing, "Individual: ", individual,
+            #      "M idx", missing_idx, "indiv_idx", indiv_idx,
+            #      len(missing), len(individual[0]))
+            return individual,  # no mutation for you, buddy
     else:
-        individual[0].remove(individual[0][random.randint(0,len(individual))])
+        individual[0].remove(individual[0][random.randint(0,len(individual) - 1)])
     return individual,
 
 
@@ -129,7 +130,7 @@ toolbox.register("select", tools.selNSGA2)
 
 
 def main():
-    NGEN = 40
+    NGEN = 4
     MU = 100
     LAMBDA = 200
     CXPB = 0.3
@@ -159,5 +160,13 @@ def main():
 if __name__ == "__main__":
     _, _, hof = main()
     print("\n And Now, for the hall of fame:")
+    prev_seen = set()
     for indiv in hof:
-        print("\nIndividual stats: ", evaluate_articles(indiv, config.target_size))
+        if tuple(indiv[0]) not in prev_seen:
+            prev_seen.add(tuple(indiv[0]))
+            scores = evaluate_articles(indiv, config.target_size)
+            print("\nIndividual stats:  Article count: {} Size diff: {} page_links: {} lang_links: {} page views:{}".format(len(indiv[0]),
+                                                                                                                                scores[0],
+                                                                                                                                scores[1],
+                                                                                                                                scores[2],
+                                                                                                                                scores[3]))
