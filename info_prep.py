@@ -9,6 +9,21 @@ def split_iter(string):
     return (x.group(0)[:-1] for x in re.finditer(r'(.*\n|.+$)', string))
 
 
+def number_conv(entry):
+    """
+    Sanitizes inputs to integers and floats, since those are smaller and better handled by math
+    :param entry:
+    :return:
+    """
+    try:
+        return int(entry)
+    except:
+        try:
+            return float(entry)
+        except:
+            return entry
+
+
 def read_file(file_name, encoding='utf-8', page_id_index=0):
     """This function will read in a file and put it into a hash for fast access"""
     with lzma.open(file_name) as page_file:
@@ -17,11 +32,11 @@ def read_file(file_name, encoding='utf-8', page_id_index=0):
     print("Imported file {}, parsing".format(file_name))
     parsed_lines = {}
     for line in split_iter(lines):
-        tup = tuple(line.split('\t'))
+        tup = tuple(number_conv(entry) for entry in line.split('\t'))
         # restore these next three lines if you think there can be id collisions
         # if tup[page_id_index] not in parsed_lines:
         #    parsed_lines[tup[page_id_index]] = []
-        #parsed_lines[tup[page_id_index]] += [tup]
+        # parsed_lines[tup[page_id_index]] += [tup]
         parsed_lines[tup[page_id_index]] = tup
 
     return parsed_lines

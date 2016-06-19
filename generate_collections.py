@@ -46,7 +46,7 @@ def create_dummy_data_fast():
 # calling in prepped data
 # --------------------------
 
-ALL_FILES = create_dummy_data_fast()  # prep_files()
+ALL_FILES = prep_files()  # create_dummy_data_fast()  # prep_files()
 ALL_FILES_KEYS = list(ALL_FILES.keys())
 ALL_FILES_KEYSET = set(ALL_FILES_KEYS)
 PAGE_LINKS_INDEX = 3
