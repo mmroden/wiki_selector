@@ -24,6 +24,7 @@ Check the config file for various environment variables and configuration settin
 Note that this process takes a _very_ long time to run.
 
 TODO:
+
 1.  Add in quality and importance metrics.  This is trickier than it might seem at first glance.
 2.  Multiprocessing is a terrible memory hog right now; I would recommend using it very sparingly.
 3.  The output is less than useful in its current incarnation.
