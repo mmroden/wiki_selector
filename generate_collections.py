@@ -155,13 +155,13 @@ toolbox.register("map", futures.map)  # to make things multicore
 def write_lines_by_key(key, n, hof, of):
     will_reverse = False if key == 1 else True
     sorted_hof = sorted(hof, key=itemgetter(key), reverse=will_reverse)
-    if key - 1 == PAGE_SIZE_INDEX:
+    if key == PAGE_SIZE_INDEX - 1:
         of.write("Top {} article sets by page size:\n\n".format(n))
-    if key - 1 == PAGE_LINKS_INDEX:
+    if key == PAGE_LINKS_INDEX - 1:
         of.write("Top {} article sets by page links:\n\n".format(n))
-    if key - 1 == LANG_LINKS_INDEX:
+    if key == LANG_LINKS_INDEX - 1:
         of.write("Top {} article sets by language links:\n\n".format(n))
-    if key - 1 == PAGE_VIEWS_INDEX:
+    if key == PAGE_VIEWS_INDEX - 1:
         of.write("Top {} article sets by page views:\n\n".format(n))
     for count in range(n):
         indiv = sorted_hof[count]
