@@ -70,8 +70,8 @@ def init_selection():
     # np.random.shuffle(the_keys)
     the_keys = np.random.permutation(ALL_FILES_KEYS)  # faster than shuffle
     final_idx = random.randint(0, len(the_keys))
-    output = the_keys[:final_idx]
-    print('random selection: {} len: {}'.format(output, len(output)))
+    output = the_keys[:final_idx].tolist()
+    # ('random selection: {} len: {}'.format(output, len(output)))
     # print('Made an individual for the population')
     return output
 
@@ -107,12 +107,9 @@ def cxCounter(ind1, ind2, indpb):
         # now choose a start spot for each array
         start1 = random.randint(0, len(ind1[0]) - swap_len - 1)
         start2 = random.randint(0, len(ind2[0]) - swap_len - 1)
-        for x in range(swap_len):
-            idx1 = x + start1
-            idx2 = x + start2
-            tmp1 = ind1[0][idx1]
-            ind1[0][idx1] = ind2[0][idx2]
-            ind2[0][idx2] = tmp1
+        tmp = ind1[0][start1:swap_len+start1]
+        ind1[0][start1:len(tmp)+start1] = ind2[0][start2:swap_len+start2]
+        ind2[0][start2:swap_len+start2] = tmp
         return ind1, ind2
     else:
         return ind1, ind2
@@ -139,6 +136,7 @@ def mutCounter(individual):
             #      len(missing), len(individual[0]))
             return individual,  # no mutation for you, buddy
     else:
+        # numpy.delete(individual[0], random.randint(0,len(individual) - 1))
         individual[0].remove(individual[0][random.randint(0,len(individual) - 1)])
     return individual,
 
