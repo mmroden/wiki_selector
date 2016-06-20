@@ -8,6 +8,7 @@ from operator import itemgetter
 from info_prep import prep_files
 import config
 from scoop import futures  # to make things multicore
+import numpy as np
 
 # We delete the reduction function of the Counter because it doesn't copy added
 # attributes. Because we create a class that inherit from the Counter, the
@@ -65,10 +66,13 @@ creator.create("ArticleSet", list, fitness=creator.Fitness)
 
 def init_selection():
     """  Choose a randomly sized subset of articles """
-    the_keys = ALL_FILES_KEYS  # no real need for a copy each time
-    random.shuffle(the_keys)
-    output = the_keys[:random.randint(0, len(the_keys))]
-    # print('initial selection: {}'.format(output))
+    # the_keys = ALL_FILES_KEYS  # no real need for a copy each time
+    # np.random.shuffle(the_keys)
+    the_keys = np.random.permutation(ALL_FILES_KEYS)  # faster than shuffle
+    final_idx = random.randint(0, len(the_keys))
+    output = the_keys[:final_idx]
+    print('random selection: {} len: {}'.format(output, len(output)))
+    # print('Made an individual for the population')
     return output
 
 toolbox = base.Toolbox()

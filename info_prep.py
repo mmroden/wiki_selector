@@ -42,7 +42,7 @@ def read_file(file_name, encoding='utf-8', page_id_index=0):
         # count += 1
         # if count > 1000000:  # a subset of articles
         #    break
-
+    print("File {} is parsed.".format(file_name))
     return parsed_lines
 
 
