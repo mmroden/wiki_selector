@@ -65,7 +65,7 @@ creator.create("ArticleSet", list, fitness=creator.Fitness)
 
 def init_selection():
     """  Choose a randomly sized subset of articles """
-    the_keys = ALL_FILES_KEYS.copy()
+    the_keys = ALL_FILES_KEYS  # no real need for a copy each time
     random.shuffle(the_keys)
     output = the_keys[:random.randint(0, len(the_keys))]
     # print('initial selection: {}'.format(output))
@@ -118,7 +118,7 @@ def mutCounter(individual):
     """Adds or remove an item from an individual"""
     # individual = individual[0]
     if random.random() > 0.5:
-        the_keys = ALL_FILES_KEYSET.copy()
+        the_keys = ALL_FILES_KEYSET
         indiv_set = set(individual[0])
         missing = list(the_keys - indiv_set)
         individual[0] = list(indiv_set)

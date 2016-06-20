@@ -31,6 +31,7 @@ def read_file(file_name, encoding='utf-8', page_id_index=0):
 
     print("Imported file {}, parsing".format(file_name))
     parsed_lines = {}
+    # count = 0
     for line in split_iter(lines):
         tup = tuple(number_conv(entry) for entry in line.split('\t'))
         # restore these next three lines if you think there can be id collisions
@@ -38,6 +39,9 @@ def read_file(file_name, encoding='utf-8', page_id_index=0):
         #    parsed_lines[tup[page_id_index]] = []
         # parsed_lines[tup[page_id_index]] += [tup]
         parsed_lines[tup[page_id_index]] = tup
+        # count += 1
+        # if count > 1000000:  # a subset of articles
+        #    break
 
     return parsed_lines
 
@@ -79,7 +83,8 @@ def prep_files():
     :return: hashes by page_ids
     '''
     all_files = read_file(os.path.join(config.which_wiki, 'all.lzma'), page_id_index=1)
-    check_sanity(all_files)
+    # check_sanity(all_files)  # only check sanity when not doing parallel execution; otherwisee
+    # you will run out of memory on a system with less than ~4gb per core
     return all_files
 
 
