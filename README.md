@@ -26,13 +26,13 @@ Note that this process takes a _very_ long time to run.
 TODO:
 
 1.  Add in quality and importance metrics.  This is trickier than it might seem at first glance.
-2.  Multiprocessing is a terrible memory hog right now; I would recommend using it very sparingly.
+2.  Multiprocessing is a terrible memory hog right now; I would recommend using it very sparingly, if at all
 3.  The output is less than useful in its current incarnation.
 
-On my system, I am running this setup right now with
+To run with multiprocessing:
 
-    python -m scoop -n 3 generate_collections.py
+    python -m scoop -n N generate_collections.py
 
-I have a core i7 with 4 real cores and 4 hyperthreaded cores, as well as 16 gb of RAM-- memory spikes to 13 gb
-during setup, and then stabilizes to around 60%.  This is Windows 10.
-
+where _N_ is the number of cores you want to use for this process.  When N > 2, the memory needs are
+so large that, on Windows 10 at least, disk swap needs to be engaged.  At that point, the speed of
+using more cores is probably outweighed by hitting the disk.
