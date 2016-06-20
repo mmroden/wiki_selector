@@ -14,7 +14,12 @@ To use it:
 The result will be a file named with the time of the trial.  In that file will be a top-N list of candidate
 article sets, sorted by size, number of page links, number of language links, and page views.
 
-Check the config file for various environment variables and configuration settings.
+Check the config file for various environment variables and configuration settings.  Some important ones:
+
+    FTP_PASS: needed to download files from the kiwix site.  FTP_USER and FTP_SITE are already set by default.
+    WHICH_WIKI: whether you want English, French, etc.  A complete list can be found on that FTP site.
+    MAX_NUM_SETS: the number of wiki subsets to report for each prioritization type
+    SIZE: the target size of the wiki collection in bytes, using the size provided in the all.lzma file
 
 Note that this process takes a _very_ long time to run.
 
