@@ -77,8 +77,8 @@ def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
         # parsed_lines[tup[page_id_index]] += [tup]
         if all_file:  # that is, the line is of variable length, because it is from the 'all' file
             ratings = tup[6:]
-            if config.testing:
-                print(ratings)
+            # if config.testing:
+            #    print(ratings)
             qual_ranking = impt_ranking = impt_total = qual_total = 0
             for rating in ratings:
                 qual, impt = get_quality_and_importance(rating)
