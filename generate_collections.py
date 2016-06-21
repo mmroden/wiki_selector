@@ -220,8 +220,8 @@ def main():
     if config.testing:
         NGEN = 40
     else:
-        NGEN = 100
-    MU = 100
+        NGEN = 200
+    MU = 1000
     LAMBDA = 200
     CXPB = 0.3
     MUTPB = 0.6
