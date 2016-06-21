@@ -4,23 +4,23 @@ import os
 import config
 
 
-QUALITY_RANKS = {"FA-Class": 6,
-                 "FL-Class": 5,
-                 "A-Class": 4,
-                 "GA-Class": 3,
-                 "B-Class": 2,
-                 "C-Class": 1,
-                 "Start-Class": 0,
-                 "Stub-Class": -1,
-                 "List-Class": -2,
+QUALITY_RANKS = {"FA-Class": 4,
+                 "FL-Class": 3,
+                 "A-Class": 2,
+                 "GA-Class": 1,
+                 "B-Class": 0,
+                 "C-Class": -1,
+                 "Start-Class": -2,
+                 "Stub-Class": -3,
+                 "List-Class": -4,
                  "Assessed-Class": -3}  # arbitrary class weights
-IMPORTANCE_RANKS = {"Top-Class": 3,
-                    "High-Class": 2,
-                    "Mid-Class": 1,
-                    "Low-Class": 0}
+IMPORTANCE_RANKS = {"Top-Class": 2,
+                    "High-Class": 1,
+                    "Mid-Class": 0,
+                    "Low-Class": -1}
 
-BLANK_QUALITY = -4.0
-BLANK_IMPT = -4.0
+BLANK_QUALITY = -5.0
+BLANK_IMPT = -2.0
 
 
 def split_iter(string):
@@ -100,16 +100,18 @@ def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
                 #        print(real_tup)
                 #    except:
                 #        print("tup breaks character encodings")
-                parsed_lines[real_tup[page_id_index]] = real_tup
+                if qual_total > 0 and impt_total > 0:
+                    parsed_lines[real_tup[page_id_index]] = real_tup
             else:
-                parsed_lines[tup[page_id_index]] = tuple(tup[:6] + (BLANK_QUALITY, BLANK_IMPT))
+                pass  # do nothing, the article is not worth including
+                # parsed_lines[tup[page_id_index]] = tuple(tup[:6] + (BLANK_QUALITY, BLANK_IMPT))
         else:
             parsed_lines[tup[page_id_index]] = tup
         if config.testing:
             count += 1
-            if count > 10000:  # a subset of articles
+            if count > 1000:  # a subset of articles
                break
-    print("File {} is parsed.".format(file_name))
+    print("File {} is parsed, final count is {}".format(file_name, len(parsed_lines)))
     return parsed_lines
 
 
