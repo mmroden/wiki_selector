@@ -39,9 +39,10 @@ def read_file(file_name, encoding='utf-8', page_id_index=0):
         #    parsed_lines[tup[page_id_index]] = []
         # parsed_lines[tup[page_id_index]] += [tup]
         parsed_lines[tup[page_id_index]] = tup
-        count += 1
-        # if count > 10000:  # a subset of articles
-        #   break
+        if config.testing:
+            count += 1
+            if count > 10000:  # a subset of articles
+               break
     print("File {} is parsed.".format(file_name))
     return parsed_lines
 

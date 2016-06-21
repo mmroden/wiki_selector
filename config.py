@@ -9,6 +9,11 @@ which_wiki = os.environ.get('WHICH_WIKI', 'enwiki_2016-06')
 
 acceptable_epsilon = os.environ.get('EPSILON', 20)  # allowed slippage between pages and all
 
-target_size = int(os.environ.get('SIZE', 1000000000))  # in bytes
+max_num_candidate_sets = int(os.environ.get('MAX_NUM_SETS', 2))
 
-max_num_candidate_sets = int(os.environ.get('MAX_NUM_SETS', 5))
+testing = bool(os.environ.get('TESTING', True))
+
+if testing:
+    target_size = 10000
+else:
+    target_size = int(os.environ.get('SIZE', 100000))  # in bytes

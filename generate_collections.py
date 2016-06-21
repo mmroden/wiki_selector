@@ -54,6 +54,7 @@ PAGE_LINKS_INDEX = 3
 LANG_LINKS_INDEX = 4
 PAGE_VIEWS_INDEX = 5
 PAGE_SIZE_INDEX = 2
+PAGE_TITLE_INDEX = 0
 
 
 # ----------------------------
@@ -149,6 +150,14 @@ toolbox.register("select", tools.selNSGA2)
 toolbox.register("map", futures.map)  # to make things multicore
 
 
+def get_article_title(page_id):
+    try:
+        the_page_title = ALL_FILES[page_id][PAGE_TITLE_INDEX].encode('utf-8', errors='replace')
+        return the_page_title
+    except:
+        print ("Broken on Page ID {}".format(page_id))
+        return None
+
 # -------------------------
 # output functions
 # -------------------------
@@ -166,7 +175,8 @@ def write_lines_by_key(key, n, hof, of):
     for count in range(n):
         indiv = sorted_hof[count]
         of.write("Rank: {}\tArticle count: {}\tSize diff: {}\tpage_links: {}\tlang_links: {}\tpage views: {}\nArticles:{}\n\n".format(
-            count + 1, len(indiv[0]), indiv[1], indiv[2], indiv[3], indiv[4], indiv[0]))
+            count + 1, len(indiv[0]), indiv[1], indiv[2], indiv[3], indiv[4],
+            list(get_article_title(page_id) for page_id in indiv[0])))
 
 
 def print_top_n(hall_of_fame, n, file_name):
@@ -189,7 +199,10 @@ def dedupe_hof(hof):
 
 
 def main():
-    NGEN = 100
+    if config.testing:
+        NGEN = 10
+    else:
+        NGEN = 100
     MU = 100
     LAMBDA = 200
     CXPB = 0.3
