@@ -104,13 +104,14 @@ def cxCounter(ind1, ind2, indpb):
     feasible to simple swap numbers"""
     if random.random() > indpb:
         # first, choose a length that is lower than either indiv's length
-        swap_len = random.randint(0, min(len(ind1[0]), len(ind2[0]))-1)
-        # now choose a start spot for each array
-        start1 = random.randint(0, len(ind1[0]) - swap_len - 1)
-        start2 = random.randint(0, len(ind2[0]) - swap_len - 1)
-        tmp = ind1[0][start1:swap_len+start1]
-        ind1[0][start1:len(tmp)+start1] = ind2[0][start2:swap_len+start2]
-        ind2[0][start2:swap_len+start2] = tmp
+        if len(ind1[0]) and len(ind2[0]):
+            swap_len = random.randint(0, min(len(ind1[0]), len(ind2[0]))-1)
+            # now choose a start spot for each array
+            start1 = random.randint(0, len(ind1[0]) - swap_len - 1)
+            start2 = random.randint(0, len(ind2[0]) - swap_len - 1)
+            tmp = ind1[0][start1:swap_len+start1]
+            ind1[0][start1:len(tmp)+start1] = ind2[0][start2:swap_len+start2]
+            ind2[0][start2:swap_len+start2] = tmp
         return ind1, ind2
     else:
         return ind1, ind2
@@ -119,27 +120,22 @@ def cxCounter(ind1, ind2, indpb):
 def mutCounter(individual):
     """Adds or remove an item from an individual"""
     # individual = individual[0]
-    if random.random() > 0.5:
-        the_keys = ALL_FILES_KEYSET
-        indiv_set = set(individual[0])
-        missing = list(the_keys - indiv_set)
-        individual[0] = list(indiv_set)
-        indiv_idx = missing_idx = 0
-        try:
+    try:
+        if random.random() > 0.5:
+            the_keys = ALL_FILES_KEYSET
+            indiv_set = set(individual[0])
+            missing = list(the_keys - indiv_set)
+            individual[0] = list(indiv_set)
             indiv_idx = random.randint(0,len(individual[0])-1)
             missing_idx = random.randint(0,len(missing)-1)
             if len(missing) and len(individual[0]):
                 individual[0][indiv_idx] = missing[missing_idx]
-        except:
-            # debugging messages I'll leave in for now
-            # print("Missing: ", missing, "Individual: ", individual,
-            #      "M idx", missing_idx, "indiv_idx", indiv_idx,
-            #      len(missing), len(individual[0]))
-            return individual,  # no mutation for you, buddy
-    else:
-        # numpy.delete(individual[0], random.randint(0,len(individual) - 1))
-        individual[0].remove(individual[0][random.randint(0,len(individual) - 1)])
-    return individual,
+        else:
+            # numpy.delete(individual[0], random.randint(0,len(individual) - 1))
+            individual[0].remove(individual[0][random.randint(0,len(individual) - 1)])
+        return individual,
+    except:
+        return individual,  # no mutation for you, buddy
 
 
 toolbox.register("evaluate", evaluate_articles, target_size=config.target_size)

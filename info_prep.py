@@ -4,6 +4,23 @@ import os
 import config
 
 
+QUALITY_RANKS = {"FA-Class": 6,
+                 "FL-Class": 5,
+                 "A-Class": 4,
+                 "GA-Class": 3,
+                 "B-Class": 2,
+                 "C-Class": 1,
+                 "Start-Class": 0,
+                 "Stub-Class": -1,
+                 "List-Class": -2,
+                 "Assessed-Class": -3}  # arbitrary class weights
+IMPORTANCE_RANKS = {"Top-Class": 3,
+                    "High-Class": 2,
+                    "Mid-Class": 1,
+                    "Low-Class": 0}
+DO_NOT_COUNT = "NotA-Class", "Unknown-Class", "NA-Class"
+
+
 def split_iter(string):
     ''' from http://stackoverflow.com/questions/3862010/is-there-a-generator-version-of-string-split-in-python'''
     return (x.group(0)[:-1] for x in re.finditer(r'(.*\n|.+$)', string))
@@ -24,7 +41,25 @@ def number_conv(entry):
             return entry
 
 
-def read_file(file_name, encoding='utf-8', page_id_index=0):
+def get_quality_and_importance(rating):
+    try:
+        classes = rating.split('=')[1]
+        qual, impt = classes.split(':')
+        qual_num = impt_num = 0
+        if qual in QUALITY_RANKS:
+            qual_num = QUALITY_RANKS[qual]
+        else:
+            qual_num = None
+        if impt in IMPORTANCE_RANKS:
+            impt_num = IMPORTANCE_RANKS[impt]
+        else:
+            impt_num = None
+        return qual_num, impt_num
+    except:
+        return None, None # don't return anything, don't count it
+
+
+def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
     """This function will read in a file and put it into a hash for fast access"""
     with lzma.open(file_name) as page_file:
         lines = page_file.read().decode(encoding)
@@ -38,10 +73,36 @@ def read_file(file_name, encoding='utf-8', page_id_index=0):
         # if tup[page_id_index] not in parsed_lines:
         #    parsed_lines[tup[page_id_index]] = []
         # parsed_lines[tup[page_id_index]] += [tup]
-        parsed_lines[tup[page_id_index]] = tup
+        if all_file:  # that is, the line is of variable length, because it is from the 'all' file
+            ratings = tup[6:]
+            if config.testing:
+                print(ratings)
+            qual_ranking = impt_ranking = impt_total = qual_total = 0
+            for rating in ratings:
+                qual, impt = get_quality_and_importance(rating)
+                if qual is not None:
+                    qual_ranking += qual
+                    qual_total += 1
+                if impt is not None:
+                    impt_ranking += impt
+                    impt_total += 1
+            if qual_total:
+                qual_ranking /= float(qual_total)
+            if impt_total:
+                impt_ranking /= float(impt_total)
+            if qual_total and impt_total:
+                real_tup = tuple(tup[:5] + (qual_ranking, impt_ranking))
+                if config.testing:
+                    print(qual_ranking, impt_ranking)
+                    print(real_tup)
+                parsed_lines[real_tup[page_id_index]] = real_tup
+            else:
+                parsed_lines[tup[page_id_index]] = tup
+        else:
+            parsed_lines[tup[page_id_index]] = tup
         if config.testing:
             count += 1
-            if count > 10000:  # a subset of articles
+            if count > 100:  # a subset of articles
                break
     print("File {} is parsed.".format(file_name))
     return parsed_lines
@@ -83,7 +144,8 @@ def prep_files():
     All that's returned from this is the 'all' collection, indexed by page_id
     :return: hashes by page_ids
     '''
-    all_files = read_file(os.path.join(config.which_wiki, 'all.lzma'), page_id_index=1)
+    all_files = read_file(os.path.join(config.which_wiki, 'all.lzma'),
+                          page_id_index=1, all_file=True)
     # check_sanity(all_files)  # only check sanity when not doing parallel execution; otherwisee
     # you will run out of memory on a system with less than ~4gb per core
     return all_files
