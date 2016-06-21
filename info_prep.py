@@ -100,7 +100,13 @@ def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
                 #        print(real_tup)
                 #    except:
                 #        print("tup breaks character encodings")
-                if qual_total > 0 and impt_total > 0:
+                if qual_ranking > 0 and impt_ranking > 0:
+                    # if config.testing:
+                    #    try:
+                    #        print(real_tup)
+                    #        print(qual_total, impt_total)
+                    #    except:
+                    #        print("tup breaks character encodings")
                     parsed_lines[real_tup[page_id_index]] = real_tup
             else:
                 pass  # do nothing, the article is not worth including
@@ -109,7 +115,7 @@ def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
             parsed_lines[tup[page_id_index]] = tup
         if config.testing:
             count += 1
-            if count > 1000:  # a subset of articles
+            if count > config.testing_size:  # a subset of articles
                break
     print("File {} is parsed, final count is {}".format(file_name, len(parsed_lines)))
     return parsed_lines
