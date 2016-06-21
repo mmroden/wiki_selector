@@ -4,23 +4,23 @@ import os
 import config
 
 
-QUALITY_RANKS = {"FA-Class": 4,
-                 "FL-Class": 3,
-                 "A-Class": 2,
-                 "GA-Class": 1,
-                 "B-Class": 0,
-                 "C-Class": -1,
-                 "Start-Class": -2,
-                 "Stub-Class": -3,
-                 "List-Class": -4,
+QUALITY_RANKS = {"FA-Class": 5,
+                 "FL-Class": 4,
+                 "A-Class": 3,
+                 "GA-Class": 2,
+                 "B-Class": 1,
+                 "C-Class": 0,
+                 "Start-Class": -1,
+                 "Stub-Class": -2,
+                 "List-Class": -3,
                  "Assessed-Class": -3}  # arbitrary class weights
 IMPORTANCE_RANKS = {"Top-Class": 2,
                     "High-Class": 1,
                     "Mid-Class": 0,
                     "Low-Class": -1}
 
-BLANK_QUALITY = -5.0
-BLANK_IMPT = -2.0
+BLANK_QUALITY = 0.0
+BLANK_IMPT = 0.0
 
 
 def split_iter(string):

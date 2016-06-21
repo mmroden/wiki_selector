@@ -94,12 +94,16 @@ def evaluate_articles(individual, target_size):
     individual = individual[0]  # because it's been tupled
     # print(individual)
     indiv_set = set(individual)
-    page_links = sum(ALL_FILES[entry][PAGE_LINKS_INDEX] for entry in indiv_set)
-    lang_links = sum(ALL_FILES[entry][LANG_LINKS_INDEX] for entry in indiv_set)
-    page_views = sum(ALL_FILES[entry][PAGE_VIEWS_INDEX] for entry in indiv_set)
-    page_size = sum(ALL_FILES[entry][PAGE_SIZE_INDEX] for entry in indiv_set)  # can change this to just a total
-    quality = sum(ALL_FILES[entry][QUALITY_INDEX] for entry in indiv_set)
-    importance = sum(ALL_FILES[entry][IMPORTANCE_INDEX] for entry in indiv_set)
+    set_size = float(len(indiv_set))
+    if set_size:
+        page_links = sum(ALL_FILES[entry][PAGE_LINKS_INDEX] for entry in indiv_set)/set_size
+        lang_links = sum(ALL_FILES[entry][LANG_LINKS_INDEX] for entry in indiv_set)/set_size
+        page_views = sum(ALL_FILES[entry][PAGE_VIEWS_INDEX] for entry in indiv_set)/set_size
+        page_size = sum(ALL_FILES[entry][PAGE_SIZE_INDEX] for entry in indiv_set)/set_size  # can change this to just a total
+        quality = sum(ALL_FILES[entry][QUALITY_INDEX] for entry in indiv_set)/set_size
+        importance = sum(ALL_FILES[entry][IMPORTANCE_INDEX] for entry in indiv_set)/set_size
+    else:
+        return 1000000000000000, 0, 0, 0, 0, 0  # ludicrous individual that should be dropped
     del indiv_set  # attempt at memory management
     return abs(page_size - target_size), page_links, lang_links, page_views, quality, importance
 
@@ -256,7 +260,7 @@ if __name__ == "__main__":
     count = 0
     for article_set in deduped_hof:
         scores = evaluate_articles(article_set, config.target_size)
-        to_print_hof += [((tuple(article_set[0]),
+        to_print_hof += [((tuple(set(article_set[0])),
                            scores[0], scores[1], scores[2],
                            scores[3], scores[4], scores[5]))]
         # tuple where first entry is the article list, then the score tuple is the second entry
