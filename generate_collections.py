@@ -99,7 +99,7 @@ def evaluate_articles(individual, target_size):
         page_links = sum(ALL_FILES[entry][PAGE_LINKS_INDEX] for entry in indiv_set)/set_size
         lang_links = sum(ALL_FILES[entry][LANG_LINKS_INDEX] for entry in indiv_set)/set_size
         page_views = sum(ALL_FILES[entry][PAGE_VIEWS_INDEX] for entry in indiv_set)/set_size
-        page_size = sum(ALL_FILES[entry][PAGE_SIZE_INDEX] for entry in indiv_set)/set_size  # can change this to just a total
+        page_size = sum(ALL_FILES[entry][PAGE_SIZE_INDEX] for entry in indiv_set)  # can change this to just a total
         quality = sum(ALL_FILES[entry][QUALITY_INDEX] for entry in indiv_set)/set_size
         importance = sum(ALL_FILES[entry][IMPORTANCE_INDEX] for entry in indiv_set)/set_size
     else:

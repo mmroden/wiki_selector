@@ -4,23 +4,23 @@ import os
 import config
 
 
-QUALITY_RANKS = {"FA-Class": 5,
-                 "FL-Class": 4,
-                 "A-Class": 3,
-                 "GA-Class": 2,
-                 "B-Class": 1,
-                 "C-Class": 0,
-                 "Start-Class": -1,
-                 "Stub-Class": -2,
-                 "List-Class": -3,
+QUALITY_RANKS = {"FA-Class": 6,
+                 "FL-Class": 5,
+                 "A-Class": 4,
+                 "GA-Class": 3,
+                 "B-Class": 2,
+                 "C-Class": 1,
+                 "Start-Class": 0,
+                 "Stub-Class": -1,
+                 "List-Class": -2,
                  "Assessed-Class": -3}  # arbitrary class weights
-IMPORTANCE_RANKS = {"Top-Class": 2,
-                    "High-Class": 1,
-                    "Mid-Class": 0,
-                    "Low-Class": -1}
+IMPORTANCE_RANKS = {"Top-Class": 3,
+                    "High-Class": 2,
+                    "Mid-Class": 1,
+                    "Low-Class": 0}
 
-BLANK_QUALITY = 0.0
-BLANK_IMPT = 0.0
+BLANK_QUALITY = -2.0
+BLANK_IMPT = -2.0
 
 
 def split_iter(string):
@@ -80,27 +80,33 @@ def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
             # if config.testing:
             #    print(ratings)
             qual_ranking = impt_ranking = impt_total = qual_total = 0
+            max_qual = 0
+            max_impt = 0
             for rating in ratings:
                 qual, impt = get_quality_and_importance(rating)
                 if qual is not None:
                     qual_ranking += qual
                     qual_total += 1
+                    if qual > max_qual:
+                        max_qual = qual
                 if impt is not None:
                     impt_ranking += impt
                     impt_total += 1
+                    if impt > max_impt:
+                        max_impt = impt
             if qual_total:
                 qual_ranking /= float(qual_total)
             if impt_total:
                 impt_ranking /= float(impt_total)
             if qual_total and impt_total:
-                real_tup = tuple(tup[:6] + (qual_ranking, impt_ranking))
+                real_tup = tuple(tup[:6] + (max_qual, max_impt))  #(qual_ranking, impt_ranking))
                 # if config.testing:
                 #    print(qual_ranking, impt_ranking)
                 #    try:
                 #        print(real_tup)
                 #    except:
                 #        print("tup breaks character encodings")
-                if qual_ranking > 0 and impt_ranking > 0:
+                if max_qual > 0 and max_impt > 0:
                     # if config.testing:
                     #    try:
                     #        print(real_tup)
