@@ -74,6 +74,7 @@ def init_selection():
     the_keys = np.random.permutation(ALL_FILES_KEYS)  # faster than shuffle
     final_idx = random.randint(0, len(the_keys))
     output = the_keys[:final_idx].tolist()
+    del the_keys  # attempt at memory handling
     # ('random selection: {} len: {}'.format(output, len(output)))
     # print('Made an individual for the population')
     return output
@@ -99,6 +100,7 @@ def evaluate_articles(individual, target_size):
     page_size = sum(ALL_FILES[entry][PAGE_SIZE_INDEX] for entry in indiv_set)  # can change this to just a total
     quality = sum(ALL_FILES[entry][QUALITY_INDEX] for entry in indiv_set)
     importance = sum(ALL_FILES[entry][IMPORTANCE_INDEX] for entry in indiv_set)
+    del indiv_set  # attempt at memory management
     return abs(page_size - target_size), page_links, lang_links, page_views, quality, importance
 
 
@@ -116,6 +118,7 @@ def cxCounter(ind1, ind2, indpb):
             tmp = ind1[0][start1:swap_len+start1]
             ind1[0][start1:len(tmp)+start1] = ind2[0][start2:swap_len+start2]
             ind2[0][start2:swap_len+start2] = tmp
+            del tmp  # attempt at memory management
         return ind1, ind2
     else:
         return ind1, ind2
@@ -134,9 +137,16 @@ def mutCounter(individual):
             missing_idx = random.randint(0,len(missing)-1)
             if len(missing) and len(individual[0]):
                 individual[0][indiv_idx] = missing[missing_idx]
+            del indiv_set  # attempt at memory handling
+            del missing
         else:
             # numpy.delete(individual[0], random.randint(0,len(individual) - 1))
-            individual[0].remove(individual[0][random.randint(0,len(individual) - 1)])
+            # individual[0].remove(individual[0][random.randint(0,len(individual) - 1)])
+            # use this as a chance to shrink a candidate
+            the_keys = np.random.permutation(individual[0])  # faster than shuffle
+            final_idx = random.randint(0, len(the_keys))
+            individual[0] = the_keys[:final_idx].tolist()
+            del the_keys  # attempt at memory handling
         return individual,
     except:
         return individual,  # no mutation for you, buddy
@@ -204,7 +214,7 @@ def dedupe_hof(hof):
 
 def main():
     if config.testing:
-        NGEN = 100
+        NGEN = 40
     else:
         NGEN = 100
     MU = 100

@@ -94,12 +94,12 @@ def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
                 impt_ranking /= float(impt_total)
             if qual_total and impt_total:
                 real_tup = tuple(tup[:6] + (qual_ranking, impt_ranking))
-                if config.testing:
-                    print(qual_ranking, impt_ranking)
-                    try:
-                        print(real_tup)
-                    except:
-                        print("tup breaks character encodings")
+                # if config.testing:
+                #    print(qual_ranking, impt_ranking)
+                #    try:
+                #        print(real_tup)
+                #    except:
+                #        print("tup breaks character encodings")
                 parsed_lines[real_tup[page_id_index]] = real_tup
             else:
                 parsed_lines[tup[page_id_index]] = tuple(tup[:6] + (BLANK_QUALITY, BLANK_IMPT))
