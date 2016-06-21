@@ -14,6 +14,6 @@ max_num_candidate_sets = int(os.environ.get('MAX_NUM_SETS', 2))
 testing = bool(os.environ.get('TESTING', True))
 
 if testing:
-    target_size = 10000
+    target_size = 1000000
 else:
     target_size = int(os.environ.get('SIZE', 100000))  # in bytes

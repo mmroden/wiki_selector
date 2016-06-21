@@ -55,13 +55,15 @@ LANG_LINKS_INDEX = 4
 PAGE_VIEWS_INDEX = 5
 PAGE_SIZE_INDEX = 2
 PAGE_TITLE_INDEX = 0
+QUALITY_INDEX = 6
+IMPORTANCE_INDEX = 7
 
 
 # ----------------------------
 # GA functions
 # ----------------------------
 
-creator.create("Fitness", base.Fitness, weights=(-1.0, 1.0, 1.0, 1.0))
+creator.create("Fitness", base.Fitness, weights=(-1.0, 1.0, 1.0, 1.0, 1.0, 1.0))
 creator.create("ArticleSet", list, fitness=creator.Fitness)
 
 
@@ -95,7 +97,9 @@ def evaluate_articles(individual, target_size):
     lang_links = sum(ALL_FILES[entry][LANG_LINKS_INDEX] for entry in indiv_set)
     page_views = sum(ALL_FILES[entry][PAGE_VIEWS_INDEX] for entry in indiv_set)
     page_size = sum(ALL_FILES[entry][PAGE_SIZE_INDEX] for entry in indiv_set)  # can change this to just a total
-    return abs(page_size - target_size), page_links, lang_links, page_views
+    quality = sum(ALL_FILES[entry][QUALITY_INDEX] for entry in indiv_set)
+    importance = sum(ALL_FILES[entry][IMPORTANCE_INDEX] for entry in indiv_set)
+    return abs(page_size - target_size), page_links, lang_links, page_views, quality, importance
 
 
 def cxCounter(ind1, ind2, indpb):
@@ -168,10 +172,14 @@ def write_lines_by_key(key, n, hof, of):
         of.write("Top {} article sets by language links:\n\n".format(n))
     if key == PAGE_VIEWS_INDEX - 1:
         of.write("Top {} article sets by page views:\n\n".format(n))
+    if key == QUALITY_INDEX - 1:
+        of.write("Top {} article sets by quality:\n\n".format(n))
+    if key == IMPORTANCE_INDEX - 1:
+        of.write("Top {} article sets by importance:\n\n".format(n))
     for count in range(n):
         indiv = sorted_hof[count]
-        of.write("Rank: {}\tArticle count: {}\tSize diff: {}\tpage_links: {}\tlang_links: {}\tpage views: {}\nArticles:{}\n\n".format(
-            count + 1, len(indiv[0]), indiv[1], indiv[2], indiv[3], indiv[4],
+        of.write("Rank: {}\tArticle count: {}\tSize diff: {}\tpage_links: {}\tlang_links: {}\tpage views: {}\tquality: {}\timportance: {}\nArticles:{}\n\n".format(
+            count + 1, len(indiv[0]), indiv[1], indiv[2], indiv[3], indiv[4], indiv[5], indiv[6],
             list(get_article_title(page_id) for page_id in indiv[0])))
 
 
@@ -180,7 +188,7 @@ def print_top_n(hall_of_fame, n, file_name):
         real_n = n
         if n > len(hall_of_fame):
             real_n = len(hall_of_fame)
-        for count in range(1, 5):
+        for count in range(1, 7):
             write_lines_by_key(count, real_n, hall_of_fame, of)
             of.write("\n\n")
 
@@ -196,7 +204,7 @@ def dedupe_hof(hof):
 
 def main():
     if config.testing:
-        NGEN = 10
+        NGEN = 100
     else:
         NGEN = 100
     MU = 100
@@ -211,10 +219,14 @@ def main():
     page_link_stats = tools.Statistics(key=lambda ind: ind.fitness.values[1])
     lang_link_stats = tools.Statistics(key=lambda ind: ind.fitness.values[2])
     page_view_stats = tools.Statistics(key=lambda ind: ind.fitness.values[3])
+    quality_stats = tools.Statistics(key=lambda ind: ind.fitness.values[4])
+    importance_stats = tools.Statistics(key=lambda ind: ind.fitness.values[5])
     stats = tools.MultiStatistics(size=size_stats,
                                   page_links=page_link_stats,
                                   lang_links=lang_link_stats,
-                                  page_views=page_view_stats)
+                                  page_views=page_view_stats,
+                                  quality=quality_stats,
+                                  importance=importance_stats)
     stats.register("avg", numpy.mean, axis=0)
     stats.register("std", numpy.std, axis=0)
     stats.register("min", numpy.min, axis=0)
@@ -234,7 +246,9 @@ if __name__ == "__main__":
     count = 0
     for article_set in deduped_hof:
         scores = evaluate_articles(article_set, config.target_size)
-        to_print_hof += [((tuple(article_set[0]), scores[0], scores[1], scores[2], scores[3]))]
+        to_print_hof += [((tuple(article_set[0]),
+                           scores[0], scores[1], scores[2],
+                           scores[3], scores[4], scores[5]))]
         # tuple where first entry is the article list, then the score tuple is the second entry
         # has the 'none' to align the indeces with the original scoring in the 'all' files
     print_top_n(to_print_hof, config.max_num_candidate_sets, trial_string)

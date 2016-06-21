@@ -18,7 +18,9 @@ IMPORTANCE_RANKS = {"Top-Class": 3,
                     "High-Class": 2,
                     "Mid-Class": 1,
                     "Low-Class": 0}
-DO_NOT_COUNT = "NotA-Class", "Unknown-Class", "NA-Class"
+
+BLANK_QUALITY = -4.0
+BLANK_IMPT = -4.0
 
 
 def split_iter(string):
@@ -91,18 +93,21 @@ def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
             if impt_total:
                 impt_ranking /= float(impt_total)
             if qual_total and impt_total:
-                real_tup = tuple(tup[:5] + (qual_ranking, impt_ranking))
+                real_tup = tuple(tup[:6] + (qual_ranking, impt_ranking))
                 if config.testing:
                     print(qual_ranking, impt_ranking)
-                    print(real_tup)
+                    try:
+                        print(real_tup)
+                    except:
+                        print("tup breaks character encodings")
                 parsed_lines[real_tup[page_id_index]] = real_tup
             else:
-                parsed_lines[tup[page_id_index]] = tup
+                parsed_lines[tup[page_id_index]] = tuple(tup[:6] + (BLANK_QUALITY, BLANK_IMPT))
         else:
             parsed_lines[tup[page_id_index]] = tup
         if config.testing:
             count += 1
-            if count > 100:  # a subset of articles
+            if count > 10000:  # a subset of articles
                break
     print("File {} is parsed.".format(file_name))
     return parsed_lines
