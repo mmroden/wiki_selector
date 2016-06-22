@@ -86,7 +86,7 @@ toolbox.register("articles", tools.initCycle, creator.ArticleSet,
 toolbox.register("population", tools.initRepeat, list, toolbox.articles)
 
 
-def evaluate_articles(individual, target_size):
+def evaluate_articles(individual, target_size, final_output=False):
     """Evaluates the fitness and return the error on the price and the time
     taken by the order if the chef can cook everything in parallel."""
 
@@ -96,9 +96,12 @@ def evaluate_articles(individual, target_size):
     indiv_set = set(individual)
     set_size = float(len(indiv_set))
     if set_size:
-        page_links = sum(ALL_FILES[entry][PAGE_LINKS_INDEX] for entry in indiv_set)/set_size
-        lang_links = sum(ALL_FILES[entry][LANG_LINKS_INDEX] for entry in indiv_set)/set_size
-        page_views = sum(ALL_FILES[entry][PAGE_VIEWS_INDEX] for entry in indiv_set)/set_size
+        if final_output:
+            page_links = sum(ALL_FILES[entry][PAGE_LINKS_INDEX] for entry in indiv_set)/set_size
+            lang_links = sum(ALL_FILES[entry][LANG_LINKS_INDEX] for entry in indiv_set)/set_size
+            page_views = sum(ALL_FILES[entry][PAGE_VIEWS_INDEX] for entry in indiv_set)/set_size
+        else:
+            page_links = lang_links = page_views = 0  # don't use for assessment, just for final comparison
         page_size = sum(ALL_FILES[entry][PAGE_SIZE_INDEX] for entry in indiv_set)  # can change this to just a total
         quality = sum(ALL_FILES[entry][QUALITY_INDEX] for entry in indiv_set)/set_size
         importance = sum(ALL_FILES[entry][IMPORTANCE_INDEX] for entry in indiv_set)/set_size
@@ -145,12 +148,12 @@ def mutCounter(individual):
             del missing
         else:
             # numpy.delete(individual[0], random.randint(0,len(individual) - 1))
-            # individual[0].remove(individual[0][random.randint(0,len(individual) - 1)])
+            individual[0].remove(individual[0][random.randint(0,len(individual) - 1)])
             # use this as a chance to shrink a candidate
-            the_keys = np.random.permutation(individual[0])  # faster than shuffle
-            final_idx = random.randint(0, len(the_keys))
-            individual[0] = the_keys[:final_idx].tolist()
-            del the_keys  # attempt at memory handling
+            #  = np.random.permutation(individual[0])  # faster than shuffle
+            # final_idx = random.randint(0, len(the_keys))
+            # individual[0] = the_keys[:final_idx].tolist()
+            # del the_keys  # attempt at memory handling
         return individual,
     except:
         return individual,  # no mutation for you, buddy
@@ -205,6 +208,33 @@ def print_top_n(hall_of_fame, n, file_name):
         for count in range(1, 7):
             write_lines_by_key(count, real_n, hall_of_fame, of)
             of.write("\n\n")
+        # now, look for the max quality and max importance collections
+        # within 1% of the max size
+        max_qual = max_impt = 0
+        max_qual_entry = []
+        max_impt_entry = []
+        # this code is in desparate need of a rewrite
+        # so wet, so not-DRY
+        for famer in hall_of_fame:
+            if famer[1] < config.target_size * 0.1:  # within 10% of the size requirement
+                if famer[5] > max_qual:
+                    max_qual = famer[5]
+                    max_qual_entry = famer
+                if famer[6] > max_impt:
+                    max_impt = famer[6]
+                    max_impt_entry = famer
+        if max_qual_entry:
+            indiv = max_qual_entry
+            of.write("Max Quality Entry\tArticle count: {}\tSize diff: {}\tpage_links: {}\tlang_links: {}\tpage views: {}\tquality: {}\timportance: {}\nArticles:{}\n\n".format(
+                    len(indiv[0]), indiv[1], indiv[2], indiv[3], indiv[4], indiv[5], indiv[6],
+                    list(get_article_title(page_id) for page_id in indiv[0])))
+        if max_impt_entry:
+            indiv = max_impt_entry
+            of.write("Max Importance Entry\tArticle count: {}\tSize diff: {}\tpage_links: {}\tlang_links: {}\tpage views: {}\tquality: {}\timportance: {}\nArticles:{}\n\n".format(
+                    len(indiv[0]), indiv[1], indiv[2], indiv[3], indiv[4], indiv[5], indiv[6],
+                    list(get_article_title(page_id) for page_id in indiv[0])))
+
+
 
 
 def dedupe_hof(hof):
@@ -259,7 +289,7 @@ if __name__ == "__main__":
     to_print_hof = []
     count = 0
     for article_set in deduped_hof:
-        scores = evaluate_articles(article_set, config.target_size)
+        scores = evaluate_articles(article_set, config.target_size, final_output=True)
         to_print_hof += [((tuple(set(article_set[0])),
                            scores[0], scores[1], scores[2],
                            scores[3], scores[4], scores[5]))]
