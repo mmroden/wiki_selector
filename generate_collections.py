@@ -96,12 +96,12 @@ def evaluate_articles(individual, target_size, final_output=False):
     indiv_set = set(individual)
     set_size = float(len(indiv_set))
     if set_size:
-        if final_output:
+        if True:  # if final_output:  # prototype code
             page_links = sum(ALL_FILES[entry][PAGE_LINKS_INDEX] for entry in indiv_set)/set_size
             lang_links = sum(ALL_FILES[entry][LANG_LINKS_INDEX] for entry in indiv_set)/set_size
             page_views = sum(ALL_FILES[entry][PAGE_VIEWS_INDEX] for entry in indiv_set)/set_size
-        else:
-            page_links = lang_links = page_views = 0  # don't use for assessment, just for final comparison
+        # else:
+        #    page_links = lang_links = page_views = 0  # don't use for assessment, just for final comparison
         page_size = sum(ALL_FILES[entry][PAGE_SIZE_INDEX] for entry in indiv_set)  # can change this to just a total
         quality = sum(ALL_FILES[entry][QUALITY_INDEX] for entry in indiv_set)/set_size
         importance = sum(ALL_FILES[entry][IMPORTANCE_INDEX] for entry in indiv_set)/set_size

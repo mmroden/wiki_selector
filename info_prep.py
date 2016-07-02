@@ -8,16 +8,16 @@ QUALITY_RANKS = {"FA-Class": 6,
                  "FL-Class": 5,
                  "A-Class": 4,
                  "GA-Class": 3,
-                 "B-Class": 2,
-                 "C-Class": 1,
-                 "Start-Class": 0,
-                 "Stub-Class": -1,
-                 "List-Class": -2,
-                 "Assessed-Class": -3}  # arbitrary class weights
-IMPORTANCE_RANKS = {"Top-Class": 3,
-                    "High-Class": 2,
-                    "Mid-Class": 1,
-                    "Low-Class": 0}
+                 "B-Class": 0,
+                 "C-Class": -1,
+                 "Start-Class": -2,
+                 "Stub-Class": -3,
+                 "List-Class": -4,
+                 "Assessed-Class": -5}  # arbitrary class weights
+IMPORTANCE_RANKS = {"Top-Class": 2,
+                    "High-Class": 1,
+                    "Mid-Class": 0,
+                    "Low-Class": -1}
 
 BLANK_QUALITY = -2.0
 BLANK_IMPT = -2.0
@@ -115,6 +115,7 @@ def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
                     #        print("tup breaks character encodings")
                     parsed_lines[real_tup[page_id_index]] = real_tup
             else:
+                real_tup = tuple(tup[:6] + (max_qual, max_impt))
                 pass  # do nothing, the article is not worth including
                 # parsed_lines[tup[page_id_index]] = tuple(tup[:6] + (BLANK_QUALITY, BLANK_IMPT))
         else:
