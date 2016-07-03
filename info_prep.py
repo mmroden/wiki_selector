@@ -62,7 +62,7 @@ def get_quality_and_importance(rating):
 
 
 def normalize_value(idx, x, mins, ranges):
-    if idx > 1:
+    if idx > 2:  # don't normalize on size, id, or title
         return (x - mins[idx])/ranges[idx]
     return x
 
@@ -89,9 +89,9 @@ def cull_lines(parsed_lines, page_id_index):
     culled_lines = {}
     prenorm_lines = {}  # lines before normalization
     for idx in range(start_index, end_index):
-        sorted_list = sorted(parsed_lines.items(), key=lambda x: x[idx], reverse=True)
+        sorted_list = sorted(parsed_values, key=lambda x: x[idx], reverse=True)
         max_array[idx] = sorted_list[0][idx]
-        min_array[idx] = sorted_list[len(sorted_list)][idx]
+        min_array[idx] = sorted_list[len(sorted_list)-1][idx]
         ranges[idx] = float(max_array[idx] - min_array[idx])
         for i, tup in enumerate(sorted_list):
             if i > len(sorted_list) * config.cull_percentage:
@@ -100,6 +100,8 @@ def cull_lines(parsed_lines, page_id_index):
                 if tup[page_id_index] not in prenorm_lines:
                     prenorm_lines[tup[page_id_index]] = tup
     # now, normalize by the min/max
+    print("Value ranges: ")
+    print(max_array, min_array, ranges)
     for line in list(prenorm_lines.values()):
         normalized_line = tuple(normalize_value(idx, x, min_array, ranges) for idx, x in enumerate(line))
         culled_lines[normalized_line[page_id_index]] = normalized_line

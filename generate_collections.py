@@ -50,6 +50,7 @@ def create_dummy_data_fast():
 ALL_FILES = prep_files()  # create_dummy_data_fast()  # prep_files()
 ALL_FILES_KEYS = list(ALL_FILES.keys())
 ALL_FILES_KEYSET = set(ALL_FILES_KEYS)
+ALL_FILES_SIZE = len(ALL_FILES_KEYS)
 PAGE_LINKS_INDEX = 3
 LANG_LINKS_INDEX = 4
 PAGE_VIEWS_INDEX = 5
@@ -94,14 +95,11 @@ def evaluate_articles(individual, target_size, final_output=False):
     individual = individual[0]  # because it's been tupled
     # print(individual)
     indiv_set = set(individual)
-    set_size = float(len(indiv_set))
+    set_size = ALL_FILES_SIZE  # float(len(indiv_set))
     if set_size:
-        if True:  # if final_output:  # prototype code
-            page_links = sum(ALL_FILES[entry][PAGE_LINKS_INDEX] for entry in indiv_set)/set_size
-            lang_links = sum(ALL_FILES[entry][LANG_LINKS_INDEX] for entry in indiv_set)/set_size
-            page_views = sum(ALL_FILES[entry][PAGE_VIEWS_INDEX] for entry in indiv_set)/set_size
-        # else:
-        #    page_links = lang_links = page_views = 0  # don't use for assessment, just for final comparison
+        page_links = sum(ALL_FILES[entry][PAGE_LINKS_INDEX] for entry in indiv_set)/set_size
+        lang_links = sum(ALL_FILES[entry][LANG_LINKS_INDEX] for entry in indiv_set)/set_size
+        page_views = sum(ALL_FILES[entry][PAGE_VIEWS_INDEX] for entry in indiv_set)/set_size
         page_size = sum(ALL_FILES[entry][PAGE_SIZE_INDEX] for entry in indiv_set)  # can change this to just a total
         quality = sum(ALL_FILES[entry][QUALITY_INDEX] for entry in indiv_set)/set_size
         importance = sum(ALL_FILES[entry][IMPORTANCE_INDEX] for entry in indiv_set)/set_size
@@ -205,11 +203,13 @@ def print_top_n(hall_of_fame, n, file_name):
         real_n = n
         if n > len(hall_of_fame):
             real_n = len(hall_of_fame)
-        for count in range(1, 7):
-            write_lines_by_key(count, real_n, hall_of_fame, of)
-            of.write("\n\n")
+        # for count in range(1, 7):
+        #    write_lines_by_key(count, real_n, hall_of_fame, of)
+        #    of.write("\n\n")
+        write_lines_by_key(1, real_n, hall_of_fame, of)
         # now, look for the max quality and max importance collections
         # within 1% of the max size
+        """
         max_qual = max_impt = 0
         max_qual_entry = []
         max_impt_entry = []
@@ -233,6 +233,7 @@ def print_top_n(hall_of_fame, n, file_name):
             of.write("Max Importance Entry\tArticle count: {}\tSize diff: {}\tpage_links: {}\tlang_links: {}\tpage views: {}\tquality: {}\timportance: {}\nArticles:{}\n\n".format(
                     len(indiv[0]), indiv[1], indiv[2], indiv[3], indiv[4], indiv[5], indiv[6],
                     list(get_article_title(page_id) for page_id in indiv[0])))
+                    """  # multiline comment
 
 
 
