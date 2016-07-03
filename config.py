@@ -11,7 +11,7 @@ acceptable_epsilon = os.environ.get('EPSILON', 20)  # allowed slippage between p
 
 max_num_candidate_sets = int(os.environ.get('MAX_NUM_SETS', 2))
 
-testing = bool(os.environ.get('TESTING', False))
+testing = bool(os.environ.get('TESTING', True))
 testing_size = int(os.environ.get('TESTING_SIZE', 100000))  # number of articles to consider for a test
 
 if testing:
@@ -20,3 +20,4 @@ else:
     target_size = int(os.environ.get('SIZE', 100000000))  # in bytes
 
 cull_percentage = float(os.environ.get('CULL_PERCENTAGE', 0.01))
+number_of_generations = int(os.environ.get('NUMBER_OF_GENERATIONS', 200))

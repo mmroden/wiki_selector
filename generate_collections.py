@@ -9,6 +9,7 @@ from info_prep import prep_files
 import config
 from scoop import futures  # to make things multicore
 import numpy as np
+import pickle
 
 # We delete the reduction function of the Counter because it doesn't copy added
 # attributes. Because we create a class that inherit from the Counter, the
@@ -95,11 +96,11 @@ def evaluate_articles(individual, target_size, final_output=False):
     individual = individual[0]  # because it's been tupled
     # print(individual)
     indiv_set = set(individual)
-    set_size = ALL_FILES_SIZE  # float(len(indiv_set))
+    set_size = float(len(indiv_set))
     if set_size:
-        page_links = sum(ALL_FILES[entry][PAGE_LINKS_INDEX] for entry in indiv_set)/set_size
-        lang_links = sum(ALL_FILES[entry][LANG_LINKS_INDEX] for entry in indiv_set)/set_size
-        page_views = sum(ALL_FILES[entry][PAGE_VIEWS_INDEX] for entry in indiv_set)/set_size
+        page_links = sum(ALL_FILES[entry][PAGE_LINKS_INDEX] for entry in indiv_set)/ALL_FILES_SIZE
+        lang_links = sum(ALL_FILES[entry][LANG_LINKS_INDEX] for entry in indiv_set)/ALL_FILES_SIZE
+        page_views = sum(ALL_FILES[entry][PAGE_VIEWS_INDEX] for entry in indiv_set)/ALL_FILES_SIZE
         page_size = sum(ALL_FILES[entry][PAGE_SIZE_INDEX] for entry in indiv_set)  # can change this to just a total
         quality = sum(ALL_FILES[entry][QUALITY_INDEX] for entry in indiv_set)/set_size
         importance = sum(ALL_FILES[entry][IMPORTANCE_INDEX] for entry in indiv_set)/set_size
@@ -249,9 +250,9 @@ def dedupe_hof(hof):
 
 def main():
     if config.testing:
-        NGEN = 40
+        NGEN = 4
     else:
-        NGEN = 1000
+        NGEN = config.number_of_generations
     MU = 100
     LAMBDA = 200
     CXPB = 0.3
@@ -283,10 +284,12 @@ def main():
 
 
 if __name__ == "__main__":
-    trial_string = "Trial-" + time.ctime().replace(' ', '-').replace(':', '-') + ".txt"
+    trial_string = "Trial-" + time.ctime().replace(' ', '-').replace(':', '-')
     pop, stats, hof = main()
     print("\n And Now, for the hall of fame:")
     deduped_hof = dedupe_hof(hof)
+    with open(trial_string + ".pkl", 'wb') as hof_file:
+        pickle.dump(deduped_hof, hof_file)
     to_print_hof = []
     count = 0
     for article_set in deduped_hof:
@@ -296,4 +299,4 @@ if __name__ == "__main__":
                            scores[3], scores[4], scores[5]))]
         # tuple where first entry is the article list, then the score tuple is the second entry
         # has the 'none' to align the indeces with the original scoring in the 'all' files
-    print_top_n(to_print_hof, config.max_num_candidate_sets, trial_string)
+    print_top_n(to_print_hof, config.max_num_candidate_sets, trial_string + ".txt")
