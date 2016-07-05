@@ -105,6 +105,8 @@ def cull_lines(parsed_lines, page_id_index):
     for line in list(prenorm_lines.values()):
         normalized_line = tuple(normalize_value(idx, x, min_array, ranges) for idx, x in enumerate(line))
         culled_lines[normalized_line[page_id_index]] = normalized_line
+    del prenorm_lines
+    del parsed_values  # attempts at memory management
     return culled_lines
 
 
@@ -153,6 +155,7 @@ def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
     if all_file:
         culled_lines = cull_lines(parsed_lines, page_id_index)
         print("Lines have been culled, current cull count is {}".format(len(culled_lines)))
+        del parsed_lines  # memory management attempt
         return culled_lines
     else:
         return parsed_lines

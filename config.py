@@ -11,7 +11,7 @@ acceptable_epsilon = os.environ.get('EPSILON', 20)  # allowed slippage between p
 
 max_num_candidate_sets = int(os.environ.get('MAX_NUM_SETS', 2))
 
-testing = bool(os.environ.get('TESTING', True))
+testing = bool(os.environ.get('TESTING', False))
 testing_size = int(os.environ.get('TESTING_SIZE', 100000))  # number of articles to consider for a test
 
 if testing:

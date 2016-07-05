@@ -288,8 +288,6 @@ if __name__ == "__main__":
     pop, stats, hof = main()
     print("\n And Now, for the hall of fame:")
     deduped_hof = dedupe_hof(hof)
-    with open(trial_string + ".pkl", 'wb') as hof_file:
-        pickle.dump(deduped_hof, hof_file)
     to_print_hof = []
     count = 0
     for article_set in deduped_hof:
@@ -300,3 +298,5 @@ if __name__ == "__main__":
         # tuple where first entry is the article list, then the score tuple is the second entry
         # has the 'none' to align the indeces with the original scoring in the 'all' files
     print_top_n(to_print_hof, config.max_num_candidate_sets, trial_string + ".txt")
+    with open(trial_string + ".pkl", 'wb') as hof_file:
+        pickle.dump(deduped_hof, hof_file)  # should dedupe, but Windows is being nastily aggressive
