@@ -88,17 +88,30 @@ def cull_lines(parsed_lines, page_id_index):
     parsed_values = list(parsed_lines.values())  # dictionary isn't helpful here
     culled_lines = {}
     prenorm_lines = {}  # lines before normalization
+    impt_index = end_index - 1
+    qual_index = end_index - 2
     for idx in range(start_index, end_index):
         sorted_list = sorted(parsed_values, key=lambda x: x[idx], reverse=True)
         max_array[idx] = sorted_list[0][idx]
         min_array[idx] = sorted_list[len(sorted_list)-1][idx]
         ranges[idx] = float(max_array[idx] - min_array[idx])
-        for i, tup in enumerate(sorted_list):
-            if i > len(sorted_list) * config.cull_percentage:
-                break
-            else:
-                if tup[page_id_index] not in prenorm_lines:
-                    prenorm_lines[tup[page_id_index]] = tup
+        if idx == impt_index:
+            for tup in sorted_list:
+                if tup[idx] >= IMPORTANCE_RANKS['Top-Class']:
+                    if tup[page_id_index] not in prenorm_lines:
+                        prenorm_lines[tup[page_id_index]] = tup
+        elif idx == qual_index:
+            for tup in sorted_list:
+                if tup[idx] >= QUALITY_RANKS['FL-Class']:
+                    if tup[page_id_index] not in prenorm_lines:
+                        prenorm_lines[tup[page_id_index]] = tup
+        else:
+            for i, tup in enumerate(sorted_list):
+                if i > len(sorted_list) * config.cull_percentage:
+                    break
+                else:
+                    if tup[page_id_index] not in prenorm_lines:
+                        prenorm_lines[tup[page_id_index]] = tup
     # now, normalize by the min/max
     print("Value ranges: ")
     print(max_array, min_array, ranges)

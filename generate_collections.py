@@ -5,7 +5,7 @@ import random
 from operator import attrgetter
 from collections import Counter
 from operator import itemgetter
-from info_prep import prep_files
+from info_prep import prep_files, IMPORTANCE_RANKS, QUALITY_RANKS
 import config
 from scoop import futures  # to make things multicore
 import numpy as np
@@ -166,12 +166,12 @@ toolbox.register("select", tools.selNSGA2)
 toolbox.register("map", futures.map)  # to make things multicore
 
 
-def get_article_title(page_id):
+def get_page_val(page_id, idx):
     try:
-        the_page_title = ALL_FILES[page_id][PAGE_TITLE_INDEX].encode('utf-8', errors='replace')
+        the_page_title = ALL_FILES[page_id][idx].encode('utf-8', errors='replace')
         return the_page_title
     except:
-        print ("Broken on Page ID {}".format(page_id))
+        print ("Broken on Page ID {} for index {}".format(page_id, idx))
         return None
 
 # -------------------------
@@ -194,9 +194,19 @@ def write_lines_by_key(key, n, hof, of):
         of.write("Top {} article sets by importance:\n\n".format(n))
     for count in range(n):
         indiv = sorted_hof[count]
-        of.write("Rank: {}\tArticle count: {}\tSize diff: {}\tpage_links: {}\tlang_links: {}\tpage views: {}\tquality: {}\timportance: {}\nArticles:{}\n\n".format(
-            count + 1, len(indiv[0]), indiv[1], indiv[2], indiv[3], indiv[4], indiv[5], indiv[6],
-            list(get_article_title(page_id) for page_id in indiv[0])))
+        of.write("Rank: {}\tArticle count: {}\tSize diff: {}\tpage_links: {}\tlang_links: {}\tpage views: {}\tquality: {}\timportance: {}\nArticles:\n".format(
+            count + 1, len(indiv[0]), indiv[1], indiv[2], indiv[3], indiv[4], indiv[5], indiv[6]))
+        of.write("Title\tID\tPage Links\tLang Links\tPage Views\tPage Size\tMax Impt\tMax Qual\n")
+        for page_id in indiv[0]:
+            of.write("{title}\t{id}\t{plinks}\t{llinks}\t{pviews}\t{psize}\t{max_impt}\t{max_qual}\n".format(title=get_page_val(page_id, PAGE_TITLE_INDEX),
+                                                                                                             id=page_id,
+                                                                                                             plinks=get_page_val(page_id, PAGE_LINKS_INDEX),
+                                                                                                             llinks=get_page_val(page_id, LANG_LINKS_INDEX),
+                                                                                                             pviews=get_page_val(page_id, PAGE_VIEWS_INDEX),
+                                                                                                             psize=get_page_val(page_id, PAGE_SIZE_INDEX),
+                                                                                                             max_impt=IMPORTANCE_RANKS[(page_id, IMPORTANCE_INDEX)],
+                                                                                                             max_qual=QUALITY_RANKS[get_page_val(page_id, QUALITY_INDEX)]))
+        of.write("\n\n")
 
 
 def print_top_n(hall_of_fame, n, file_name):
