@@ -286,6 +286,8 @@ def main():
 if __name__ == "__main__":
     trial_string = "Trial-" + time.ctime().replace(' ', '-').replace(':', '-')
     pop, stats, hof = main()
+    del pop
+    del stats  # memory management, not using these here
     print("\n And Now, for the hall of fame:")
     deduped_hof = dedupe_hof(hof)
     to_print_hof = []
