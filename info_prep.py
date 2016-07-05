@@ -23,6 +23,15 @@ IMPORTANCE_RANKS = {"Top-Class": 2,
 BLANK_QUALITY = 0
 BLANK_IMPT = 0  # we just don't know, assume it's viable
 
+# goddamn this is horrible spaghetti code
+# I just want to get these values out for reasonable printouts
+start_index = 2
+end_index = 8  # to be inclusive in the last index, which is quality
+impt_index = end_index - 1
+qual_index = end_index - 2
+max_array = [0 for x in range(0, end_index)]
+min_array = [100000000000000 for x in range(0, end_index)]
+ranges = [0 for x in range(0, end_index)]
 
 def split_iter(string):
     ''' from http://stackoverflow.com/questions/3862010/is-there-a-generator-version-of-string-split-in-python'''
@@ -80,16 +89,9 @@ def cull_lines(parsed_lines, page_id_index):
     :param page_id_index: the index of the page id
     :return:
     """
-    start_index = 2
-    end_index = 8  # to be inclusive in the last index, which is quality
-    max_array = [0 for x in range(0, end_index)]
-    min_array = [100000000000000 for x in range(0, end_index)]
-    ranges = [0 for x in range(0, end_index)]
     parsed_values = list(parsed_lines.values())  # dictionary isn't helpful here
     culled_lines = {}
     prenorm_lines = {}  # lines before normalization
-    impt_index = end_index - 1
-    qual_index = end_index - 2
     for idx in range(start_index, end_index):
         sorted_list = sorted(parsed_values, key=lambda x: x[idx], reverse=True)
         max_array[idx] = sorted_list[0][idx]

@@ -5,7 +5,7 @@ import random
 from operator import attrgetter
 from collections import Counter
 from operator import itemgetter
-from info_prep import prep_files, IMPORTANCE_RANKS, QUALITY_RANKS
+from info_prep import prep_files, min_array, ranges
 import config
 from scoop import futures  # to make things multicore
 import numpy as np
@@ -168,8 +168,12 @@ toolbox.register("map", futures.map)  # to make things multicore
 
 def get_page_val(page_id, idx):
     try:
-        the_page_title = ALL_FILES[page_id][idx].encode('utf-8', errors='replace')
-        return the_page_title
+        if idx == PAGE_TITLE_INDEX:
+            return ALL_FILES[page_id][idx].encode('utf-8', errors='replace')
+        elif idx == PAGE_SIZE_INDEX:
+            return ALL_FILES[page_id][idx]
+        else:
+            return int((ALL_FILES[page_id][idx] * ranges[idx]) + min_array[idx])  # back to the original values
     except:
         print ("Broken on Page ID {} for index {}".format(page_id, idx))
         return None
@@ -204,8 +208,8 @@ def write_lines_by_key(key, n, hof, of):
                                                                                                              llinks=get_page_val(page_id, LANG_LINKS_INDEX),
                                                                                                              pviews=get_page_val(page_id, PAGE_VIEWS_INDEX),
                                                                                                              psize=get_page_val(page_id, PAGE_SIZE_INDEX),
-                                                                                                             max_impt=IMPORTANCE_RANKS[(page_id, IMPORTANCE_INDEX)],
-                                                                                                             max_qual=QUALITY_RANKS[get_page_val(page_id, QUALITY_INDEX)]))
+                                                                                                             max_impt=get_page_val(page_id, IMPORTANCE_INDEX),
+                                                                                                             max_qual=get_page_val(page_id, QUALITY_INDEX)))
         of.write("\n\n")
 
 
@@ -220,31 +224,6 @@ def print_top_n(hall_of_fame, n, file_name):
         write_lines_by_key(1, real_n, hall_of_fame, of)
         # now, look for the max quality and max importance collections
         # within 1% of the max size
-        """
-        max_qual = max_impt = 0
-        max_qual_entry = []
-        max_impt_entry = []
-        # this code is in desparate need of a rewrite
-        # so wet, so not-DRY
-        for famer in hall_of_fame:
-            if famer[1] < config.target_size * 0.1:  # within 10% of the size requirement
-                if famer[5] > max_qual:
-                    max_qual = famer[5]
-                    max_qual_entry = famer
-                if famer[6] > max_impt:
-                    max_impt = famer[6]
-                    max_impt_entry = famer
-        if max_qual_entry:
-            indiv = max_qual_entry
-            of.write("Max Quality Entry\tArticle count: {}\tSize diff: {}\tpage_links: {}\tlang_links: {}\tpage views: {}\tquality: {}\timportance: {}\nArticles:{}\n\n".format(
-                    len(indiv[0]), indiv[1], indiv[2], indiv[3], indiv[4], indiv[5], indiv[6],
-                    list(get_article_title(page_id) for page_id in indiv[0])))
-        if max_impt_entry:
-            indiv = max_impt_entry
-            of.write("Max Importance Entry\tArticle count: {}\tSize diff: {}\tpage_links: {}\tlang_links: {}\tpage views: {}\tquality: {}\timportance: {}\nArticles:{}\n\n".format(
-                    len(indiv[0]), indiv[1], indiv[2], indiv[3], indiv[4], indiv[5], indiv[6],
-                    list(get_article_title(page_id) for page_id in indiv[0])))
-                    """  # multiline comment
 
 
 def dedupe_hof(hof):
