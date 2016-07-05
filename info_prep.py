@@ -20,8 +20,8 @@ IMPORTANCE_RANKS = {"Top-Class": 2,
                     "Mid-Class": 0,
                     "Low-Class": -1}
 
-BLANK_QUALITY = -2.0
-BLANK_IMPT = -2.0
+BLANK_QUALITY = 0
+BLANK_IMPT = 0  # we just don't know, assume it's viable
 
 
 def split_iter(string):
@@ -134,17 +134,14 @@ def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
             for rating in ratings:
                 qual, impt = get_quality_and_importance(rating)
                 if qual is not None:
-                    qual_ranking += qual
-                    qual_total += 1
                     if qual > max_qual:
                         max_qual = qual
                 if impt is not None:
-                    impt_ranking += impt
-                    impt_total += 1
                     if impt > max_impt:
                         max_impt = impt
             real_tup = tuple(tup[:6] + (max_qual, max_impt))
-            parsed_lines[real_tup[page_id_index]] = real_tup
+            if max_qual >= 0 or max_impt >= 0:  # disregard articles we know are low quality/unimportant
+                parsed_lines[real_tup[page_id_index]] = real_tup
         else:
             parsed_lines[tup[page_id_index]] = tup
         if config.testing:

@@ -237,15 +237,17 @@ def print_top_n(hall_of_fame, n, file_name):
                     """  # multiline comment
 
 
-
-
 def dedupe_hof(hof):
-    article_set_dict = {}
+    article_set = set()
+    name_list = []
     for indiv in hof:
         names = tuple(set(indiv[0]))
-        if names not in article_set_dict:
-            article_set_dict[names] = indiv
-    return list(article_set_dict[articles] for articles in article_set_dict)
+        if names not in article_set:
+            article_set.add(names)
+            name_list += [indiv]
+        else:
+            del indiv  # more memory management
+    return name_list
 
 
 def main():
@@ -287,7 +289,7 @@ if __name__ == "__main__":
     trial_string = "Trial-" + time.ctime().replace(' ', '-').replace(':', '-')
     pop, stats, hof = main()
     del pop
-    del stats  # memory management, not using these here
+    del stats
     print("\n And Now, for the hall of fame:")
     deduped_hof = dedupe_hof(hof)
     to_print_hof = []
