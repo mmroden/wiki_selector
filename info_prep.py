@@ -102,18 +102,18 @@ def cull_lines(parsed_lines, page_id_index):
                 if tup[idx] >= IMPORTANCE_RANKS['Top-Class']:
                     if tup[page_id_index] not in prenorm_lines:
                         prenorm_lines[tup[page_id_index]] = tup
-        elif idx == qual_index:
+        if idx == qual_index:
             for tup in sorted_list:
                 if tup[idx] >= QUALITY_RANKS['FL-Class']:
                     if tup[page_id_index] not in prenorm_lines:
                         prenorm_lines[tup[page_id_index]] = tup
-        else:
-            for i, tup in enumerate(sorted_list):
-                if i > len(sorted_list) * config.cull_percentage:
-                    break
-                else:
-                    if tup[page_id_index] not in prenorm_lines:
-                        prenorm_lines[tup[page_id_index]] = tup
+        # make sure that the qual/impt stuff is all there, then add more to the cull percentage
+        for i, tup in enumerate(sorted_list):
+            if i > len(sorted_list) * config.cull_percentage:
+                break
+            else:
+                if tup[page_id_index] not in prenorm_lines:
+                    prenorm_lines[tup[page_id_index]] = tup
     # now, normalize by the min/max
     print("Value ranges: ")
     print(max_array, min_array, ranges)
