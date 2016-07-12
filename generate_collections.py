@@ -5,10 +5,11 @@ import random
 from operator import attrgetter
 from collections import Counter
 from operator import itemgetter
-from info_prep import prep_files
+from info_prep import prep_files, min_array, ranges
 import config
 from scoop import futures  # to make things multicore
 import numpy as np
+import pickle
 
 # We delete the reduction function of the Counter because it doesn't copy added
 # attributes. Because we create a class that inherit from the Counter, the
@@ -50,6 +51,7 @@ def create_dummy_data_fast():
 ALL_FILES = prep_files()  # create_dummy_data_fast()  # prep_files()
 ALL_FILES_KEYS = list(ALL_FILES.keys())
 ALL_FILES_KEYSET = set(ALL_FILES_KEYS)
+ALL_FILES_SIZE = len(ALL_FILES_KEYS)
 PAGE_LINKS_INDEX = 3
 LANG_LINKS_INDEX = 4
 PAGE_VIEWS_INDEX = 5
@@ -86,7 +88,7 @@ toolbox.register("articles", tools.initCycle, creator.ArticleSet,
 toolbox.register("population", tools.initRepeat, list, toolbox.articles)
 
 
-def evaluate_articles(individual, target_size):
+def evaluate_articles(individual, target_size, final_output=False):
     """Evaluates the fitness and return the error on the price and the time
     taken by the order if the chef can cook everything in parallel."""
 
@@ -96,9 +98,9 @@ def evaluate_articles(individual, target_size):
     indiv_set = set(individual)
     set_size = float(len(indiv_set))
     if set_size:
-        page_links = sum(ALL_FILES[entry][PAGE_LINKS_INDEX] for entry in indiv_set)/set_size
-        lang_links = sum(ALL_FILES[entry][LANG_LINKS_INDEX] for entry in indiv_set)/set_size
-        page_views = sum(ALL_FILES[entry][PAGE_VIEWS_INDEX] for entry in indiv_set)/set_size
+        page_links = sum(ALL_FILES[entry][PAGE_LINKS_INDEX] for entry in indiv_set)/ALL_FILES_SIZE
+        lang_links = sum(ALL_FILES[entry][LANG_LINKS_INDEX] for entry in indiv_set)/ALL_FILES_SIZE
+        page_views = sum(ALL_FILES[entry][PAGE_VIEWS_INDEX] for entry in indiv_set)/ALL_FILES_SIZE
         page_size = sum(ALL_FILES[entry][PAGE_SIZE_INDEX] for entry in indiv_set)  # can change this to just a total
         quality = sum(ALL_FILES[entry][QUALITY_INDEX] for entry in indiv_set)/set_size
         importance = sum(ALL_FILES[entry][IMPORTANCE_INDEX] for entry in indiv_set)/set_size
@@ -145,12 +147,12 @@ def mutCounter(individual):
             del missing
         else:
             # numpy.delete(individual[0], random.randint(0,len(individual) - 1))
-            # individual[0].remove(individual[0][random.randint(0,len(individual) - 1)])
+            individual[0].remove(individual[0][random.randint(0,len(individual) - 1)])
             # use this as a chance to shrink a candidate
-            the_keys = np.random.permutation(individual[0])  # faster than shuffle
-            final_idx = random.randint(0, len(the_keys))
-            individual[0] = the_keys[:final_idx].tolist()
-            del the_keys  # attempt at memory handling
+            #  = np.random.permutation(individual[0])  # faster than shuffle
+            # final_idx = random.randint(0, len(the_keys))
+            # individual[0] = the_keys[:final_idx].tolist()
+            # del the_keys  # attempt at memory handling
         return individual,
     except:
         return individual,  # no mutation for you, buddy
@@ -164,12 +166,16 @@ toolbox.register("select", tools.selNSGA2)
 toolbox.register("map", futures.map)  # to make things multicore
 
 
-def get_article_title(page_id):
+def get_page_val(page_id, idx):
     try:
-        the_page_title = ALL_FILES[page_id][PAGE_TITLE_INDEX].encode('utf-8', errors='replace')
-        return the_page_title
+        if idx == PAGE_TITLE_INDEX:
+            return ALL_FILES[page_id][idx].encode('utf-8', errors='replace')
+        elif idx == PAGE_SIZE_INDEX:
+            return ALL_FILES[page_id][idx]
+        else:
+            return int((ALL_FILES[page_id][idx] * ranges[idx]) + min_array[idx])  # back to the original values
     except:
-        print ("Broken on Page ID {}".format(page_id))
+        print ("Broken on Page ID {} for index {}".format(page_id, idx))
         return None
 
 # -------------------------
@@ -192,9 +198,19 @@ def write_lines_by_key(key, n, hof, of):
         of.write("Top {} article sets by importance:\n\n".format(n))
     for count in range(n):
         indiv = sorted_hof[count]
-        of.write("Rank: {}\tArticle count: {}\tSize diff: {}\tpage_links: {}\tlang_links: {}\tpage views: {}\tquality: {}\timportance: {}\nArticles:{}\n\n".format(
-            count + 1, len(indiv[0]), indiv[1], indiv[2], indiv[3], indiv[4], indiv[5], indiv[6],
-            list(get_article_title(page_id) for page_id in indiv[0])))
+        of.write("Rank: {}\tArticle count: {}\tSize diff: {}\tpage_links: {}\tlang_links: {}\tpage views: {}\tquality: {}\timportance: {}\nArticles:\n".format(
+            count + 1, len(indiv[0]), indiv[1], indiv[2], indiv[3], indiv[4], indiv[5], indiv[6]))
+        of.write("Title\tID\tPage Links\tLang Links\tPage Views\tPage Size\tMax Impt\tMax Qual\n")
+        for page_id in indiv[0]:
+            of.write("{title}\t{id}\t{plinks}\t{llinks}\t{pviews}\t{psize}\t{max_impt}\t{max_qual}\n".format(title=get_page_val(page_id, PAGE_TITLE_INDEX),
+                                                                                                             id=page_id,
+                                                                                                             plinks=get_page_val(page_id, PAGE_LINKS_INDEX),
+                                                                                                             llinks=get_page_val(page_id, LANG_LINKS_INDEX),
+                                                                                                             pviews=get_page_val(page_id, PAGE_VIEWS_INDEX),
+                                                                                                             psize=get_page_val(page_id, PAGE_SIZE_INDEX),
+                                                                                                             max_impt=get_page_val(page_id, IMPORTANCE_INDEX),
+                                                                                                             max_qual=get_page_val(page_id, QUALITY_INDEX)))
+        of.write("\n\n")
 
 
 def print_top_n(hall_of_fame, n, file_name):
@@ -202,25 +218,32 @@ def print_top_n(hall_of_fame, n, file_name):
         real_n = n
         if n > len(hall_of_fame):
             real_n = len(hall_of_fame)
-        for count in range(1, 7):
-            write_lines_by_key(count, real_n, hall_of_fame, of)
-            of.write("\n\n")
+        # for count in range(1, 7):
+        #    write_lines_by_key(count, real_n, hall_of_fame, of)
+        #    of.write("\n\n")
+        write_lines_by_key(1, real_n, hall_of_fame, of)
+        # now, look for the max quality and max importance collections
+        # within 1% of the max size
 
 
 def dedupe_hof(hof):
-    article_set_dict = {}
+    article_set = set()
+    name_list = []
     for indiv in hof:
         names = tuple(set(indiv[0]))
-        if names not in article_set_dict:
-            article_set_dict[names] = indiv
-    return list(article_set_dict[articles] for articles in article_set_dict)
+        if names not in article_set:
+            article_set.add(names)
+            name_list += [indiv]
+        else:
+            del indiv  # more memory management
+    return name_list
 
 
 def main():
     if config.testing:
-        NGEN = 40
+        NGEN = 4
     else:
-        NGEN = 1000
+        NGEN = config.number_of_generations
     MU = 100
     LAMBDA = 200
     CXPB = 0.3
@@ -252,17 +275,21 @@ def main():
 
 
 if __name__ == "__main__":
-    trial_string = "Trial-" + time.ctime().replace(' ', '-').replace(':', '-') + ".txt"
+    trial_string = "Trial-" + time.ctime().replace(' ', '-').replace(':', '-')
     pop, stats, hof = main()
+    del pop
+    del stats
     print("\n And Now, for the hall of fame:")
     deduped_hof = dedupe_hof(hof)
     to_print_hof = []
     count = 0
     for article_set in deduped_hof:
-        scores = evaluate_articles(article_set, config.target_size)
+        scores = evaluate_articles(article_set, config.target_size, final_output=True)
         to_print_hof += [((tuple(set(article_set[0])),
                            scores[0], scores[1], scores[2],
                            scores[3], scores[4], scores[5]))]
         # tuple where first entry is the article list, then the score tuple is the second entry
         # has the 'none' to align the indeces with the original scoring in the 'all' files
-    print_top_n(to_print_hof, config.max_num_candidate_sets, trial_string)
+    print_top_n(to_print_hof, config.max_num_candidate_sets, trial_string + ".txt")
+    with open(trial_string + ".pkl", 'wb') as hof_file:
+        pickle.dump(deduped_hof, hof_file)  # should dedupe, but Windows is being nastily aggressive

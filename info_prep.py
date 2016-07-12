@@ -2,26 +2,36 @@ import lzma
 import re
 import os
 import config
+import operator
 
 
-QUALITY_RANKS = {"FA-Class": 6,
-                 "FL-Class": 5,
-                 "A-Class": 4,
-                 "GA-Class": 3,
-                 "B-Class": 2,
-                 "C-Class": 1,
-                 "Start-Class": 0,
-                 "Stub-Class": -1,
-                 "List-Class": -2,
-                 "Assessed-Class": -3}  # arbitrary class weights
-IMPORTANCE_RANKS = {"Top-Class": 3,
-                    "High-Class": 2,
-                    "Mid-Class": 1,
-                    "Low-Class": 0}
+QUALITY_RANKS = {"FA-Class": 4,
+                 "FL-Class": 3,
+                 "A-Class": 2,
+                 "GA-Class": 1,
+                 "B-Class": 0,
+                 "C-Class": -1,
+                 "Start-Class": -2,
+                 "Stub-Class": -3,
+                 "List-Class": -4,
+                 "Assessed-Class": -5}  # arbitrary class weights
+IMPORTANCE_RANKS = {"Top-Class": 2,
+                    "High-Class": 1,
+                    "Mid-Class": 0,
+                    "Low-Class": -1}
 
-BLANK_QUALITY = -2.0
-BLANK_IMPT = -2.0
+BLANK_QUALITY = 0
+BLANK_IMPT = 0  # we just don't know, assume it's viable
 
+# goddamn this is horrible spaghetti code
+# I just want to get these values out for reasonable printouts
+start_index = 2
+end_index = 8  # to be inclusive in the last index, which is quality
+impt_index = end_index - 1
+qual_index = end_index - 2
+max_array = [0 for x in range(0, end_index)]
+min_array = [100000000000000 for x in range(0, end_index)]
+ranges = [0 for x in range(0, end_index)]
 
 def split_iter(string):
     ''' from http://stackoverflow.com/questions/3862010/is-there-a-generator-version-of-string-split-in-python'''
@@ -47,7 +57,6 @@ def get_quality_and_importance(rating):
     try:
         classes = rating.split('=')[1]
         qual, impt = classes.split(':')
-        qual_num = impt_num = 0
         if qual in QUALITY_RANKS:
             qual_num = QUALITY_RANKS[qual]
         else:
@@ -59,6 +68,61 @@ def get_quality_and_importance(rating):
         return qual_num, impt_num
     except:
         return None, None # don't return anything, don't count it
+
+
+def normalize_value(idx, x, mins, ranges):
+    if idx > 2:  # don't normalize on size, id, or title
+        return (x - mins[idx])/ranges[idx]
+    return x
+
+
+def cull_lines(parsed_lines, page_id_index):
+    """
+    This will take the top N% of each entry in a row, where N is a configuration variable
+    To do so:
+        sort the rows by each column
+        take the top N% of the rows
+        find the min and max of each row in sequence
+        then renormalize each row entry
+    written for the 'all_lines' collection created in read_file
+    :param parsed_lines:  the lines from the all_lines file (page name, page id, stats)
+    :param page_id_index: the index of the page id
+    :return:
+    """
+    parsed_values = list(parsed_lines.values())  # dictionary isn't helpful here
+    culled_lines = {}
+    prenorm_lines = {}  # lines before normalization
+    for idx in range(start_index, end_index):
+        sorted_list = sorted(parsed_values, key=lambda x: x[idx], reverse=True)
+        max_array[idx] = sorted_list[0][idx]
+        min_array[idx] = sorted_list[len(sorted_list)-1][idx]
+        ranges[idx] = float(max_array[idx] - min_array[idx])
+        if idx == impt_index:
+            for tup in sorted_list:
+                if tup[idx] >= IMPORTANCE_RANKS['Top-Class']:
+                    if tup[page_id_index] not in prenorm_lines:
+                        prenorm_lines[tup[page_id_index]] = tup
+        if idx == qual_index:
+            for tup in sorted_list:
+                if tup[idx] >= QUALITY_RANKS['FL-Class']:
+                    if tup[page_id_index] not in prenorm_lines:
+                        prenorm_lines[tup[page_id_index]] = tup
+        # make sure that the qual/impt stuff is all there, then add more to the cull percentage
+        for i, tup in enumerate(sorted_list):
+            if i > len(sorted_list) * config.cull_percentage:
+                break
+            else:
+                if tup[page_id_index] not in prenorm_lines:
+                    prenorm_lines[tup[page_id_index]] = tup
+    # now, normalize by the min/max
+    print("Value ranges: ")
+    print(max_array, min_array, ranges)
+    for line in list(prenorm_lines.values()):
+        normalized_line = tuple(normalize_value(idx, x, min_array, ranges) for idx, x in enumerate(line))
+        culled_lines[normalized_line[page_id_index]] = normalized_line
+    del prenorm_lines
+    del parsed_values  # attempts at memory management
+    return culled_lines
 
 
 def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
@@ -85,46 +149,28 @@ def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
             for rating in ratings:
                 qual, impt = get_quality_and_importance(rating)
                 if qual is not None:
-                    qual_ranking += qual
-                    qual_total += 1
                     if qual > max_qual:
                         max_qual = qual
                 if impt is not None:
-                    impt_ranking += impt
-                    impt_total += 1
                     if impt > max_impt:
                         max_impt = impt
-            if qual_total:
-                qual_ranking /= float(qual_total)
-            if impt_total:
-                impt_ranking /= float(impt_total)
-            if qual_total and impt_total:
-                real_tup = tuple(tup[:6] + (max_qual, max_impt))  #(qual_ranking, impt_ranking))
-                # if config.testing:
-                #    print(qual_ranking, impt_ranking)
-                #    try:
-                #        print(real_tup)
-                #    except:
-                #        print("tup breaks character encodings")
-                if max_qual > 0 and max_impt > 0:
-                    # if config.testing:
-                    #    try:
-                    #        print(real_tup)
-                    #        print(qual_total, impt_total)
-                    #    except:
-                    #        print("tup breaks character encodings")
-                    parsed_lines[real_tup[page_id_index]] = real_tup
-            else:
-                pass  # do nothing, the article is not worth including
-                # parsed_lines[tup[page_id_index]] = tuple(tup[:6] + (BLANK_QUALITY, BLANK_IMPT))
+            real_tup = tuple(tup[:6] + (max_qual, max_impt))
+            if max_qual >= 0 or max_impt >= 0:  # disregard articles we know are low quality/unimportant
+                parsed_lines[real_tup[page_id_index]] = real_tup
         else:
             parsed_lines[tup[page_id_index]] = tup
         if config.testing:
             count += 1
             if count > config.testing_size:  # a subset of articles
                break
-    print("File {} is parsed, final count is {}".format(file_name, len(parsed_lines)))
-    return parsed_lines
+    print("File {} is parsed, precull count is {}".format(file_name, len(parsed_lines)))
+    if all_file:
+        culled_lines = cull_lines(parsed_lines, page_id_index)
+        print("Lines have been culled, current cull count is {}".format(len(culled_lines)))
+        del parsed_lines  # memory management attempt
+        return culled_lines
+    else:
+        return parsed_lines
 
 
 def check_sanity(all_files):
