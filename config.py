@@ -19,5 +19,5 @@ if testing:
 else:
     target_size = int(os.environ.get('SIZE', 1000000000))  # in bytes
 
-cull_percentage = float(os.environ.get('CULL_PERCENTAGE', 0.0075))
-number_of_generations = int(os.environ.get('NUMBER_OF_GENERATIONS', 200))
+cull_percentage = float(os.environ.get('CULL_PERCENTAGE', 0.005))
+number_of_generations = int(os.environ.get('NUMBER_OF_GENERATIONS', 1000))

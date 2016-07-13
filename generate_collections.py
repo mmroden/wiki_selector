@@ -107,7 +107,7 @@ def evaluate_articles(individual, target_size, final_output=False):
     else:
         return 1000000000000000, 0, 0, 0, 0, 0  # ludicrous individual that should be dropped
     del indiv_set  # attempt at memory management
-    return abs(page_size - target_size), page_links, lang_links, page_views, quality, importance
+    return abs(page_size - target_size), page_links + lang_links + page_views, 0, 0, quality, importance
 
 
 def cxCounter(ind1, ind2, indpb):
@@ -187,7 +187,8 @@ def write_lines_by_key(key, n, hof, of):
     if key == PAGE_SIZE_INDEX - 1:
         of.write("Top {} article sets by page size:\n\n".format(n))
     if key == PAGE_LINKS_INDEX - 1:
-        of.write("Top {} article sets by page links:\n\n".format(n))
+        of.write("Top {} article sets by popularity:\n\n".format(n))
+        # of.write("Top {} article sets by page links:\n\n".format(n))
     if key == LANG_LINKS_INDEX - 1:
         of.write("Top {} article sets by language links:\n\n".format(n))
     if key == PAGE_VIEWS_INDEX - 1:
@@ -200,9 +201,9 @@ def write_lines_by_key(key, n, hof, of):
         indiv = sorted_hof[count]
         of.write("Rank: {}\tArticle count: {}\tSize diff: {}\tpage_links: {}\tlang_links: {}\tpage views: {}\tquality: {}\timportance: {}\nArticles:\n".format(
             count + 1, len(indiv[0]), indiv[1], indiv[2], indiv[3], indiv[4], indiv[5], indiv[6]))
-        of.write("Title\tID\tPage Links\tLang Links\tPage Views\tPage Size\tMax Impt\tMax Qual\n")
+        of.write("Title\tID\tPage Links\tLang Links\tPage Views\tPage Size\tMax Qual\tMax Impt\n")
         for page_id in indiv[0]:
-            of.write("{title}\t{id}\t{plinks}\t{llinks}\t{pviews}\t{psize}\t{max_impt}\t{max_qual}\n".format(title=get_page_val(page_id, PAGE_TITLE_INDEX),
+            of.write("{title}\t{id}\t{plinks}\t{llinks}\t{pviews}\t{psize}\t{max_qual}\t{max_impt}\n".format(title=get_page_val(page_id, PAGE_TITLE_INDEX),
                                                                                                              id=page_id,
                                                                                                              plinks=get_page_val(page_id, PAGE_LINKS_INDEX),
                                                                                                              llinks=get_page_val(page_id, LANG_LINKS_INDEX),
@@ -222,6 +223,9 @@ def print_top_n(hall_of_fame, n, file_name):
         #    write_lines_by_key(count, real_n, hall_of_fame, of)
         #    of.write("\n\n")
         write_lines_by_key(1, real_n, hall_of_fame, of)
+        write_lines_by_key(2, real_n, hall_of_fame, of)
+        write_lines_by_key(5, real_n, hall_of_fame, of)
+        write_lines_by_key(6, real_n, hall_of_fame, of)
         # now, look for the max quality and max importance collections
         # within 1% of the max size
 
@@ -241,7 +245,7 @@ def dedupe_hof(hof):
 
 def main():
     if config.testing:
-        NGEN = 4
+        NGEN = 40
     else:
         NGEN = config.number_of_generations
     MU = 100
@@ -254,14 +258,14 @@ def main():
 
     size_stats = tools.Statistics(key=lambda ind: ind.fitness.values[0])
     page_link_stats = tools.Statistics(key=lambda ind: ind.fitness.values[1])
-    lang_link_stats = tools.Statistics(key=lambda ind: ind.fitness.values[2])
-    page_view_stats = tools.Statistics(key=lambda ind: ind.fitness.values[3])
+    # lang_link_stats = tools.Statistics(key=lambda ind: ind.fitness.values[2])
+    # page_view_stats = tools.Statistics(key=lambda ind: ind.fitness.values[3])
     quality_stats = tools.Statistics(key=lambda ind: ind.fitness.values[4])
     importance_stats = tools.Statistics(key=lambda ind: ind.fitness.values[5])
     stats = tools.MultiStatistics(size=size_stats,
                                   page_links=page_link_stats,
-                                  lang_links=lang_link_stats,
-                                  page_views=page_view_stats,
+                                  # lang_links=lang_link_stats,
+                                  # page_views=page_view_stats,
                                   quality=quality_stats,
                                   importance=importance_stats)
     stats.register("avg", numpy.mean, axis=0)

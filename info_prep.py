@@ -5,19 +5,19 @@ import config
 import operator
 
 
-QUALITY_RANKS = {"FA-Class": 4,
-                 "FL-Class": 3,
-                 "A-Class": 2,
-                 "GA-Class": 1,
-                 "B-Class": 0,
+QUALITY_RANKS = {"FA-Class": 2,
+                 "FL-Class": 1,
+                 "A-Class": 0,
+                 "GA-Class": -1,
+                 "B-Class": -1,
                  "C-Class": -1,
                  "Start-Class": -2,
                  "Stub-Class": -3,
                  "List-Class": -4,
                  "Assessed-Class": -5}  # arbitrary class weights
-IMPORTANCE_RANKS = {"Top-Class": 2,
-                    "High-Class": 1,
-                    "Mid-Class": 0,
+IMPORTANCE_RANKS = {"Top-Class": 1,
+                    "High-Class": 0,
+                    "Mid-Class": -1,
                     "Low-Class": -1}
 
 BLANK_QUALITY = 0
