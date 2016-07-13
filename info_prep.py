@@ -128,7 +128,7 @@ def cull_lines(parsed_lines, page_id_index):
 def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
     """This function will read in a file and put it into a hash for fast access"""
     with lzma.open(file_name) as page_file:
-        lines = page_file.read().decode(encoding)
+        lines = page_file.read().decode(encoding, errors='replace')
 
     print("Imported file {}, parsing".format(file_name))
     parsed_lines = {}

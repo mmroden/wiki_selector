@@ -9,7 +9,7 @@ which_wiki = os.environ.get('WHICH_WIKI', 'enwiki_2016-06')
 
 acceptable_epsilon = os.environ.get('EPSILON', 20)  # allowed slippage between pages and all
 
-max_num_candidate_sets = int(os.environ.get('MAX_NUM_SETS', 2))
+max_num_candidate_sets = int(os.environ.get('MAX_NUM_SETS', 3))
 
 testing = bool(os.environ.get('TESTING', True))
 testing_size = int(os.environ.get('TESTING_SIZE', 100000))  # number of articles to consider for a test
@@ -20,5 +20,5 @@ else:
     target_size = int(os.environ.get('SIZE', 100000000))  # in bytes
 
 cull_percentage = float(os.environ.get('CULL_PERCENTAGE', 0.005))
-number_of_generations = int(os.environ.get('NUMBER_OF_GENERATIONS', 200))
+number_of_generations = int(os.environ.get('NUMBER_OF_GENERATIONS', 500))
 min_count = int(os.environ.get("MIN_COUNT", 1000))  # smallest number of articles in any initial population

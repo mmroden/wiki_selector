@@ -60,6 +60,12 @@ PAGE_TITLE_INDEX = 0
 QUALITY_INDEX = 6
 IMPORTANCE_INDEX = 7
 
+QUAL_RATIO = 0.3
+IMPT_RATIO = 0.3
+
+ALL_FILES_HI_Q_KEYS = list(entry for entry in ALL_FILES_KEYS if ALL_FILES[entry][QUALITY_INDEX] > 0)
+ALL_FILES_HI_I_KEYS = list(entry for entry in ALL_FILES_KEYS if ALL_FILES[entry][IMPORTANCE_INDEX] > 0)
+
 
 # ----------------------------
 # GA functions
@@ -73,15 +79,31 @@ def init_selection():
     """  Choose a randomly sized subset of articles """
     # the_keys = ALL_FILES_KEYS  # no real need for a copy each time
     # np.random.shuffle(the_keys)
+    # first, find the highest quality articles
+    # then, the highest importance articles
+    # then seed the individuals with random selections from these sets
+    # then seed from individuals not in the individual yet
+    hi_q_keys = np.random.permutation(ALL_FILES_HI_Q_KEYS)
+    hi_i_keys = np.random.permutation(ALL_FILES_HI_I_KEYS)
     the_keys = np.random.permutation(ALL_FILES_KEYS)  # faster than shuffle
-    # multiple = 0.001
-    # min_count = len(the_keys) * multiple
-    # while min_count > (config.target_size / 10000.0) * multiple:
-    #     min_count *= 0.1  # resizing the min number of articles to make sure it's not too high
-
     final_idx = random.randint(config.min_count, len(the_keys))
-    output = the_keys[:final_idx].tolist()
+    hi_q_entries = int(len(hi_q_keys) if final_idx * QUAL_RATIO > len(hi_q_keys) else final_idx * QUAL_RATIO)
+    hi_i_entries = int(len(hi_i_keys) if final_idx * IMPT_RATIO > len(hi_i_keys) else final_idx * IMPT_RATIO)
+
+    output = list(hi_q_keys[:hi_q_entries])
+    output += list(hi_i_keys[:hi_i_entries])
+    output += list(the_keys[:(final_idx - len(output))])
+    output = list(set(output))  # fast deduping, plus more shuffling
+    output = list(np.random.permutation(output))
+
+    # need minimum quality/importance to even start caring
+    # quality = sum(ALL_FILES[entry][QUALITY_INDEX] for entry in output)/float(final_idx)
+    # importance = sum(ALL_FILES[entry][IMPORTANCE_INDEX] for entry in output)/float(final_idx)
+
     del the_keys  # attempt at memory handling
+    del hi_q_keys
+    del hi_i_keys
+    # print("{} and {}".format(quality, importance))
     # ('random selection: {} len: {}'.format(output, len(output)))
     # print('Made an individual for the population')
     return output
@@ -180,15 +202,17 @@ def get_page_val(page_id, idx):
         else:
             return int((ALL_FILES[page_id][idx] * ranges[idx]) + min_array[idx])  # back to the original values
     except:
-        print ("Broken on Page ID {} for index {}".format(page_id, idx))
+        # print ("Broken on Page ID {} for index {}".format(page_id, idx))
         return None
 
 # -------------------------
 # output functions
 # -------------------------
 def write_lines_by_key(key, n, hof, of):
-    will_reverse = False if key == 1 else True
-    sorted_hof = sorted(hof, key=itemgetter(key), reverse=will_reverse)
+    if key != 1:
+        sorted_hof = sorted(hof, key=itemgetter(key), reverse=True)
+    else:
+        sorted_hof = hof
     if key == PAGE_SIZE_INDEX - 1:
         of.write("Top {} article sets by page size:\n\n".format(n))
     if key == PAGE_LINKS_INDEX - 1:
@@ -222,15 +246,25 @@ def write_lines_by_key(key, n, hof, of):
 def print_top_n(hall_of_fame, n, file_name):
     with open(file_name, 'w') as of:
         real_n = n
-        if n > len(hall_of_fame):
-            real_n = len(hall_of_fame)
+        if n >= len(hall_of_fame) - 1:
+            real_n = len(hall_of_fame) - 1
         # for count in range(1, 7):
         #    write_lines_by_key(count, real_n, hall_of_fame, of)
         #    of.write("\n\n")
-        write_lines_by_key(1, real_n, hall_of_fame, of)
-        write_lines_by_key(2, real_n, hall_of_fame, of)
-        write_lines_by_key(5, real_n, hall_of_fame, of)
-        write_lines_by_key(6, real_n, hall_of_fame, of)
+        sorted_hof = sorted(hall_of_fame, key=itemgetter(1), reverse=False)
+        write_lines_by_key(1, real_n, sorted_hof, of)
+        # now, select the subset of the sorted hof that is up to 0.1 delta from the target size
+        # that's the list to consider now
+        sorted_len = 0
+        for idx, entry in enumerate(sorted_hof):
+            if entry[1] > config.target_size * 0.02:
+                sorted_len = idx
+                break
+        print("Considering {} individuals for non-page size metrics out of {}".format(sorted_len, len(sorted_hof)))
+        subset_hof = sorted_hof[0:sorted_len]
+        write_lines_by_key(2, real_n, subset_hof, of)
+        write_lines_by_key(5, real_n, subset_hof, of)
+        write_lines_by_key(6, real_n, subset_hof, of)
         # now, look for the max quality and max importance collections
         # within 1% of the max size
 
