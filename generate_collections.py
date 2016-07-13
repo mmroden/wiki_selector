@@ -74,7 +74,12 @@ def init_selection():
     # the_keys = ALL_FILES_KEYS  # no real need for a copy each time
     # np.random.shuffle(the_keys)
     the_keys = np.random.permutation(ALL_FILES_KEYS)  # faster than shuffle
-    final_idx = random.randint(0, len(the_keys))
+    # multiple = 0.001
+    # min_count = len(the_keys) * multiple
+    # while min_count > (config.target_size / 10000.0) * multiple:
+    #     min_count *= 0.1  # resizing the min number of articles to make sure it's not too high
+
+    final_idx = random.randint(config.min_count, len(the_keys))
     output = the_keys[:final_idx].tolist()
     del the_keys  # attempt at memory handling
     # ('random selection: {} len: {}'.format(output, len(output)))
@@ -245,7 +250,7 @@ def dedupe_hof(hof):
 
 def main():
     if config.testing:
-        NGEN = 40
+        NGEN = 4
     else:
         NGEN = config.number_of_generations
     MU = 100
@@ -295,5 +300,5 @@ if __name__ == "__main__":
         # tuple where first entry is the article list, then the score tuple is the second entry
         # has the 'none' to align the indeces with the original scoring in the 'all' files
     print_top_n(to_print_hof, config.max_num_candidate_sets, trial_string + ".txt")
-    with open(trial_string + ".pkl", 'wb') as hof_file:
-        pickle.dump(deduped_hof, hof_file)  # should dedupe, but Windows is being nastily aggressive
+    # open(trial_string + ".pkl", 'wb') as hof_file:  # no point, unicode errors prevent reading it back in
+    #    pickle.dump(deduped_hof, hof_file)  # should dedupe, but Windows is being nastily aggressive
