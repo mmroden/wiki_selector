@@ -60,8 +60,8 @@ PAGE_TITLE_INDEX = 0
 QUALITY_INDEX = 6
 IMPORTANCE_INDEX = 7
 
-QUAL_RATIO = 0.3
-IMPT_RATIO = 0.3
+QUAL_RATIO = 0.4
+IMPT_RATIO = 0.4
 
 ALL_FILES_HI_Q_KEYS = list(entry for entry in ALL_FILES_KEYS if ALL_FILES[entry][QUALITY_INDEX] > 0)
 ALL_FILES_HI_I_KEYS = list(entry for entry in ALL_FILES_KEYS if ALL_FILES[entry][IMPORTANCE_INDEX] > 0)
@@ -93,8 +93,8 @@ def init_selection():
     output = list(hi_q_keys[:hi_q_entries])
     output += list(hi_i_keys[:hi_i_entries])
     output += list(the_keys[:(final_idx - len(output))])
-    output = list(set(output))  # fast deduping, plus more shuffling
-    output = list(np.random.permutation(output))
+    output_set = list(set(output))  # fast deduping, plus more shuffling
+    output = list(np.random.permutation(output_set))
 
     # need minimum quality/importance to even start caring
     # quality = sum(ALL_FILES[entry][QUALITY_INDEX] for entry in output)/float(final_idx)
@@ -103,6 +103,7 @@ def init_selection():
     del the_keys  # attempt at memory handling
     del hi_q_keys
     del hi_i_keys
+    del output_set
     # print("{} and {}".format(quality, importance))
     # ('random selection: {} len: {}'.format(output, len(output)))
     # print('Made an individual for the population')
@@ -134,7 +135,7 @@ def evaluate_articles(individual, target_size, final_output=False):
     else:
         return 1000000000000000, 0, 0, 0, 0, 0  # ludicrous individual that should be dropped
     del indiv_set  # attempt at memory management
-    return abs(page_size - target_size), page_links + lang_links + page_views, 0, 0, quality, importance
+    return abs(page_size - target_size), (2.0 * page_links + 2.0 * lang_links + page_views)/5.0, 0, 0, quality, importance
 
 
 def cxCounter(ind1, ind2, indpb):
@@ -284,7 +285,7 @@ def dedupe_hof(hof):
 
 def main():
     if config.testing:
-        NGEN = 4
+        NGEN = 40
     else:
         NGEN = config.number_of_generations
     MU = 100

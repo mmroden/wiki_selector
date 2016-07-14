@@ -29,6 +29,7 @@ start_index = 2
 end_index = 8  # to be inclusive in the last index, which is quality
 impt_index = end_index - 1
 qual_index = end_index - 2
+page_size_index = start_index
 max_array = [0 for x in range(0, end_index)]
 min_array = [100000000000000 for x in range(0, end_index)]
 ranges = [0 for x in range(0, end_index)]
@@ -108,12 +109,13 @@ def cull_lines(parsed_lines, page_id_index):
                     if tup[page_id_index] not in prenorm_lines:
                         prenorm_lines[tup[page_id_index]] = tup
         # make sure that the qual/impt stuff is all there, then add more to the cull percentage
-        for i, tup in enumerate(sorted_list):
-            if i > len(sorted_list) * config.cull_percentage:
-                break
-            else:
-                if tup[page_id_index] not in prenorm_lines:
-                    prenorm_lines[tup[page_id_index]] = tup
+        if idx != page_size_index:  # except for pages that are just big.  We don't care about those
+            for i, tup in enumerate(sorted_list):
+                if i > len(sorted_list) * config.cull_percentage:
+                    break
+                else:
+                    if tup[page_id_index] not in prenorm_lines:
+                        prenorm_lines[tup[page_id_index]] = tup
     # now, normalize by the min/max
     print("Value ranges: ")
     print(max_array, min_array, ranges)
