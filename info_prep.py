@@ -190,25 +190,36 @@ def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
     else:
         return parsed_lines
 
-def calculate_article_score(project_name, article):
+def calculate_article_score(article, project_name):
     """
     using the formula laid out by Martin et al for importance:
     Q + I = Q + IA + IScope + 50 (log_10 page views) + 100 * (log_10 page links) + 250 (log_10 lang links)
     if the project has no quality, then 4/3 * (page views, page links, lang links) using the last three terms above
+    If the project_name is not given (ie, is None), then this scoring mechanism
+    will return the highest score period.
     :param project_name:
     :param article:
     :return:
     """
-    page_view_metric = 50 * math.log10(article[5])
-    page_link_metric = 100 * math.log10(article[3])
-    lang_link_metric = 250 * math.log10(article[4])
+    try:
+        page_view_metric = 50 * math.log10(article[5])
+    except:
+        page_view_metric = 0
+    try:
+        page_link_metric = 100 * math.log10(article[3])
+    except:
+        page_link_metric = 0
+    try:
+        lang_link_metric = 250 * math.log10(article[4])
+    except:
+        lang_link_metric = 0
     # gotta get the max importance and quality rating
     highest_quality = 0
     highest_importance = 0
     for entry in article[6:]:
         first_split = entry.split('=')
         project = first_split[0]
-        if project == project_name:
+        if project == project_name or not project_name:
             second_split = first_split[1].split(':')
             quality = second_split[0]
             importance = second_split[1]
@@ -248,10 +259,16 @@ def get_seed_articles():
         all_projects = set(entry.split('=')[0] for entry in article[6:])
         for project in all_projects:
             if project in project_set:
-                considered_articles[project] += [(article[1], calculate_article_score(project, article))]
+                considered_articles[project] += [(article[1], calculate_article_score(article, project))]
+
+    article_subset = {project: [] for project in project_set}
+    for project in project_set:
+        article_subset[project] = sorted(considered_articles[project],
+                                         key=lambda x: x[1],
+                                         reverse=True)[0:config.min_number_emphasized_articles]
 
     # now, filter each set of considered articles
-    return considered_articles
+    return article_subset
 
 
 def check_sanity(all_files):
