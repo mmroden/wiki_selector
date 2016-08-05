@@ -42,3 +42,8 @@ To get a sorted list, invoke from the interpreter:
 
 from info_prep import print_list_sorted_by_metric
 print_list_sorted_by_metric()
+
+To get the list of seeds, invoke from the interpreter:
+
+from info_prep import get_seed_articles
+seeds = get_seed_articles()

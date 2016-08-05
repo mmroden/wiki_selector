@@ -283,6 +283,16 @@ def get_seed_articles():
         print("Seed size: {}  Target size: {}".format(total_size, config.target_size))
         assert False
 
+    list_name = "Seed_List_{}.txt".format(config.which_wiki)
+    with open(list_name, "w") as of:
+        of.write("Article Name\tArticle ID\tPage Size\tPage Links\tLang Links\tPage Views\n")
+        for article in seed_article_set:
+            for idx in list(range(6)):
+                try:
+                    of.write("{}\t".format(all_articles[article][idx]))
+                except:
+                    of.write("None\t")
+
     # now, filter each set of considered articles
     return seed_article_set
 
