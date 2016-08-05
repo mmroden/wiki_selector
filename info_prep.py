@@ -292,6 +292,7 @@ def get_seed_articles():
                     of.write("{}\t".format(all_articles[article][idx]))
                 except:
                     of.write("None\t")
+            of.write("\n")
 
     # now, filter each set of considered articles
     return seed_article_set
