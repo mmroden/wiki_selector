@@ -3,6 +3,7 @@ import re
 import os
 import config
 import operator
+import math
 
 
 QUALITY_RANKS = {"FA-Class": 2,
@@ -15,10 +16,25 @@ QUALITY_RANKS = {"FA-Class": 2,
                  "Stub-Class": -3,
                  "List-Class": -4,
                  "Assessed-Class": -5}  # arbitrary class weights
+QUALITY_SCORES = {"FA-Class": 500,
+                  "FL-Class": 500,
+                  "A-Class": 400,
+                  "GA-Class": 400,
+                  "B-Class": 300,
+                  "C-Class": 225,
+                  "Start-Class": 150,
+                  "All-Others": 0}  # following Martin's metrics
+
 IMPORTANCE_RANKS = {"Top-Class": 1,
                     "High-Class": 0,
                     "Mid-Class": -1,
                     "Low-Class": -1}
+
+IMPORTANCE_SCORES = {"Top-Class": 400,
+                     "High-Class": 300,
+                      "Mid-Class": 200,
+                    " Low-Class": 100}
+
 
 BLANK_QUALITY = 0
 BLANK_IMPT = 0  # we just don't know, assume it's viable
@@ -173,6 +189,69 @@ def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
         return culled_lines
     else:
         return parsed_lines
+
+def calculate_article_score(project_name, article):
+    """
+    using the formula laid out by Martin et al for importance:
+    Q + I = Q + IA + IScope + 50 (log_10 page views) + 100 * (log_10 page links) + 250 (log_10 lang links)
+    if the project has no quality, then 4/3 * (page views, page links, lang links) using the last three terms above
+    :param project_name:
+    :param article:
+    :return:
+    """
+    page_view_metric = 50 * math.log10(article[5])
+    page_link_metric = 100 * math.log10(article[3])
+    lang_link_metric = 250 * math.log10(article[4])
+    # gotta get the max importance and quality rating
+    highest_quality = 0
+    highest_importance = 0
+    for entry in article[6:]:
+        first_split = entry.split('=')
+        project = first_split[0]
+        if project == project_name:
+            second_split = first_split[1].split(':')
+            quality = second_split[0]
+            importance = second_split[1]
+            try:
+                quality_score = QUALITY_SCORES[quality]
+            except:
+                quality_score = QUALITY_SCORES['All-Others']
+            if quality_score > highest_quality:
+                highest_quality = quality_score
+            try:
+                importance_score = IMPORTANCE_SCORES[importance]
+            except:
+                importance_score = 0  # zero means multiplying external quality by 4/3
+            if importance_score > highest_importance:
+                highest_importance = importance_score
+    if highest_importance:
+        return highest_importance + highest_quality + page_view_metric + page_link_metric + lang_link_metric
+    else:
+        return highest_quality + 4.0/float(3.0) * (page_view_metric + page_link_metric + lang_link_metric)
+
+
+def get_seed_articles():
+    """
+    Reads the configured all.lzma file to get the top N ranked articles for all projects in the configured
+    Emphasized Projects list.
+    :return:
+    """
+    all_articles = read_file(os.path.join(config.which_wiki, 'all.lzma'), page_id_index=1, all_file=False)  # we want preprocessed content
+
+    project_set = set(config.emphasized_projects)
+    considered_articles = {project: [] for project in project_set}
+
+    # first, now that we've read everything in, get only articles associated with the given project list
+    key_list = list(all_articles.keys())
+    for key in key_list:
+        article = all_articles[key]
+        all_projects = set(entry.split('=')[0] for entry in article[6:])
+        for project in all_projects:
+            if project in project_set:
+                considered_articles[project] += [(article[1], calculate_article_score(project, article))]
+
+    # now, filter each set of considered articles
+    return considered_articles
 
 
 def check_sanity(all_files):
