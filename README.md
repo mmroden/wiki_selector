@@ -36,3 +36,9 @@ To run with multiprocessing:
 where _N_ is the number of cores you want to use for this process.  When N > 2, the memory needs are
 so large that, on Windows 10 at least, disk swap needs to be engaged.  At that point, the speed of
 using more cores is probably outweighed by hitting the disk.
+
+
+To get a sorted list, invoke from the interpreter:
+
+from info_prep import print_list_sorted_by_metric
+print_list_sorted_by_metric()

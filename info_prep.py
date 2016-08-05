@@ -262,13 +262,54 @@ def get_seed_articles():
                 considered_articles[project] += [(article[1], calculate_article_score(article, project))]
 
     article_subset = {project: [] for project in project_set}
+
+    # now get the sorted and truncated list of entries by project
+    # also have to do a size check; error out now if we're already over the size restriction
+    total_size = 0
+    seed_article_set = set()
     for project in project_set:
-        article_subset[project] = sorted(considered_articles[project],
-                                         key=lambda x: x[1],
-                                         reverse=True)[0:config.min_number_emphasized_articles]
+        sorted_subset = sorted(considered_articles[project],
+                               key=lambda x: x[1],
+                               reverse=True)[0:config.min_number_emphasized_articles]
+        article_subset[project] = tuple(entry[0] for entry in sorted_subset)
+        for entry in article_subset[project]:
+            seed_article_set.add(entry)
+
+    for article_id in seed_article_set:
+        total_size += all_articles[article_id][2]
+
+    if total_size > config.target_size:
+        print("Seed size is bigger than target size; please lower the number of projects or articles per project.")
+        print("Seed size: {}  Target size: {}".format(total_size, config.target_size))
+        assert False
 
     # now, filter each set of considered articles
-    return article_subset
+    return seed_article_set
+
+
+def print_list_sorted_by_metric():
+    all_articles = read_file(os.path.join(config.which_wiki, 'all.lzma'), page_id_index=1,
+                             all_file=False)  # we want preprocessed content
+    article_list_by_score = [(article, calculate_article_score(article, None)) for article in list(all_articles.values())]
+    sorted_article_list = sorted(article_list_by_score, key=lambda x: x[1], reverse=True)
+    total_size = 0
+    max_idx = 0
+    for idx, article in enumerate(sorted_article_list):
+        total_size += article[0][2]  # look up the article by id, then get the second element for size
+        if total_size > config.target_size:
+            max_idx = idx
+            break
+
+    list_name = "Sorted_List_{}.txt".format(config.which_wiki)
+    with open(list_name, "w") as of:
+        of.write("Article Name\tArticle ID\tPage Size\tPage Links\tLang Links\tPage Views\tScore\n")
+        for article in sorted_article_list[:max_idx]:
+            for idx in list(range(6)):
+                try:
+                    of.write("{}\t".format(article[0][idx]))
+                except:
+                    of.write("None\t")
+            of.write("{}\n".format(article[1]))
 
 
 def check_sanity(all_files):
