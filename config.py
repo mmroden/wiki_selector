@@ -33,8 +33,8 @@ default_projects = ("Biography", "Wikipedia_vital", "History_of_science", "Medic
                     "Philosophy", "Physics", "Biography_(science_and_academia)", "Film", "Aviation",
                     "National_Register_of_Historic_Places", "Military_history", "Paleontology",
                     "WikiProject_Cities", "Food_and_drink", "Ethics", "Computing", "Ships",
-                    "Dinosaurs", "Amphibian_and_reptile", "History", "Chemistry", "Mathematics")
+                    "Dinosaurs", "Amphibian_and_reptile", "History", "Mathematics")
 emphasized_projects = os.environ.get('EMPHASIZED_PROJECTS', default_projects)
 min_number_emphasized_articles = int(os.environ.get("MIN_EMPH", 20))
 
-excluded_projects = ("Chemistry", "Professional_wrestling")
+excluded_projects = ("Chemistry", "Professional_wrestling", "Pornography")  # selected somewhat arbitrarily
