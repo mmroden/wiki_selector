@@ -201,6 +201,7 @@ def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False, remo
     else:
         return parsed_lines
 
+
 def calculate_article_score(article, project_name):
     """
     using the formula laid out by Martin et al for importance:
@@ -268,6 +269,52 @@ def print_collection(article_id_set, all_articles, filename):
                 except:
                     of.write("None\t")
             of.write("\n")
+
+
+def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
+
+    page_file_name = os.path.join(config.which_wiki, 'pages.lzma')
+    link_file_name = os.path.join(config.which_wiki, 'pagelinks.lzma')
+
+    # first, we go through the links, and build up a set of titles that they are linked to
+    # then, we go through the page set and find the ids for those titles.
+    # if the seed set size + the linked size is contained in the target size, expand the
+    # seed set and repeat
+    title_set = set()
+    encoding = 'utf-8'
+    with lzma.open(link_file_name) as link_file:
+        links = link_file.read()  # .decode(encoding, errors='replace')
+        for link_line in links:
+            tup = tuple(entry for entry in link_line.split('\t'))
+            if tup[0] in seed_set:
+                title_set.add(tup[1])
+    print ("Link Files have been imported.")
+    expanded_id_set = set()
+
+    with lzma.open(page_file_name) as page_file:
+        pages = page_file.read()  # .decode(encoding, errors='replace')
+        for page_line in pages:
+            tup = tuple(entry for entry in page_line.split('\t'))
+            if tup[1] in title_set:
+                expanded_id_set.add(tup[0])
+
+    print("Expanded set created now.")
+    # now, do a size check
+    print("Given Article Set Size: {}".format(len(seed_set)))
+    print("Expanded Article Set Size: {}".format(len(expanded_id_set)))
+    expanded_id_list = list(expanded_id_set)
+    total_size = 0
+    for id in expanded_id_list:
+        total_size += all_articles[id][2]
+    for id in seed_set:
+        total_size += all_articles[id][2]
+
+    print("New size: {}".format(total_size))
+    if total_size < config.target_size:
+        print("Total size is less than the target size, expanding for all new articles and then rerunning.")
+    else:
+        print("Total size exceeds target size, beginning selection process.")
+
 
 
 def get_seed_articles():
