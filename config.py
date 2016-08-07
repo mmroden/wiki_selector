@@ -36,3 +36,5 @@ default_projects = ("Biography", "Wikipedia_vital", "History_of_science", "Medic
                     "Dinosaurs", "Amphibian_and_reptile", "History", "Chemistry", "Mathematics")
 emphasized_projects = os.environ.get('EMPHASIZED_PROJECTS', default_projects)
 min_number_emphasized_articles = int(os.environ.get("MIN_EMPH", 20))
+
+excluded_projects = ("Chemistry", "Professional_wrestling")

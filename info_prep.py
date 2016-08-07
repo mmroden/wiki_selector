@@ -143,7 +143,7 @@ def cull_lines(parsed_lines, page_id_index):
     return culled_lines
 
 
-def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
+def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False, remove_excluded=True):
     """
     This function will read in a file and put it into a hash for fast access
     A lot of the 'all_file" functionality is cruft at this point
@@ -154,32 +154,40 @@ def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
     print("Imported file {}, parsing".format(file_name))
     parsed_lines = {}
     count = 0
+    excluded_set = set(config.excluded_projects)
     for line in split_iter(lines):
         tup = tuple(number_conv(entry) for entry in line.split('\t'))
         # restore these next three lines if you think there can be id collisions
         # if tup[page_id_index] not in parsed_lines:
         #    parsed_lines[tup[page_id_index]] = []
         # parsed_lines[tup[page_id_index]] += [tup]
-        if all_file:  # that is, the line is of variable length, because it is from the 'all' file
-            ratings = tup[6:]
-            # if config.testing:
-            #    print(ratings)
-            qual_ranking = impt_ranking = impt_total = qual_total = 0
-            max_qual = 0
-            max_impt = 0
-            for rating in ratings:
-                qual, impt = get_quality_and_importance(rating)
-                if qual is not None:
-                    if qual > max_qual:
-                        max_qual = qual
-                if impt is not None:
-                    if impt > max_impt:
-                        max_impt = impt
-            real_tup = tuple(tup[:6] + (max_qual, max_impt))
-            if max_qual >= 0 or max_impt >= 0:  # disregard articles we know are low quality/unimportant
-                parsed_lines[real_tup[page_id_index]] = real_tup
-        else:
-            parsed_lines[tup[page_id_index]] = tup
+        # remove any mention of an excluded project
+        exclude_entry = False
+        for entry in tup[6:]:
+            project_name = entry.split('=')[0]
+            if project_name in excluded_set:
+                exclude_entry = True
+        if not exclude_entry:
+            if all_file:  # that is, the line is of variable length, because it is from the 'all' file
+                ratings = tup[6:]
+                # if config.testing:
+                #    print(ratings)
+                qual_ranking = impt_ranking = impt_total = qual_total = 0
+                max_qual = 0
+                max_impt = 0
+                for rating in ratings:
+                    qual, impt = get_quality_and_importance(rating)
+                    if qual is not None:
+                        if qual > max_qual:
+                            max_qual = qual
+                    if impt is not None:
+                        if impt > max_impt:
+                            max_impt = impt
+                real_tup = tuple(tup[:6] + (max_qual, max_impt))
+                if max_qual >= 0 or max_impt >= 0:  # disregard articles we know are low quality/unimportant
+                    parsed_lines[real_tup[page_id_index]] = real_tup
+            else:
+                parsed_lines[tup[page_id_index]] = tup
         if config.testing:
             count += 1
             if count > config.testing_size:  # a subset of articles
