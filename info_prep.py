@@ -144,7 +144,10 @@ def cull_lines(parsed_lines, page_id_index):
 
 
 def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False):
-    """This function will read in a file and put it into a hash for fast access"""
+    """
+    This function will read in a file and put it into a hash for fast access
+    A lot of the 'all_file" functionality is cruft at this point
+    """
     with lzma.open(file_name) as page_file:
         lines = page_file.read().decode(encoding, errors='replace')
 
@@ -241,10 +244,29 @@ def calculate_article_score(article, project_name):
         return highest_quality + 4.0/float(3.0) * (page_view_metric + page_link_metric + lang_link_metric)
 
 
+def print_collection(article_id_set, all_articles, filename):
+    """
+    Given a list of article ids and the articles themselves, print everything out into
+    the specified file name
+    :param article_id_list:
+    :return:
+    """
+    with open(filename, "w") as of:
+        of.write("Article Name\tArticle ID\tPage Size\tPage Links\tLang Links\tPage Views\n")
+        for article in article_id_set:
+            for idx in list(range(6)):
+                try:
+                    of.write("{}\t".format(all_articles[article][idx]))
+                except:
+                    of.write("None\t")
+            of.write("\n")
+
+
 def get_seed_articles():
     """
     Reads the configured all.lzma file to get the top N ranked articles for all projects in the configured
     Emphasized Projects list.
+    Returns the seed set as well as a set of articles filtered for excluded wikiprojects
     :return:
     """
     all_articles = read_file(os.path.join(config.which_wiki, 'all.lzma'), page_id_index=1, all_file=False)  # we want preprocessed content
@@ -283,19 +305,8 @@ def get_seed_articles():
         print("Seed size: {}  Target size: {}".format(total_size, config.target_size))
         assert False
 
-    list_name = "Seed_List_{}.txt".format(config.which_wiki)
-    with open(list_name, "w") as of:
-        of.write("Article Name\tArticle ID\tPage Size\tPage Links\tLang Links\tPage Views\n")
-        for article in seed_article_set:
-            for idx in list(range(6)):
-                try:
-                    of.write("{}\t".format(all_articles[article][idx]))
-                except:
-                    of.write("None\t")
-            of.write("\n")
-
     # now, filter each set of considered articles
-    return seed_article_set
+    return seed_article_set, all_articles
 
 
 def print_list_sorted_by_metric():
@@ -305,22 +316,17 @@ def print_list_sorted_by_metric():
     sorted_article_list = sorted(article_list_by_score, key=lambda x: x[1], reverse=True)
     total_size = 0
     max_idx = 0
+    article_id_set = set()
     for idx, article in enumerate(sorted_article_list):
         total_size += article[0][2]  # look up the article by id, then get the second element for size
         if total_size > config.target_size:
             max_idx = idx
             break
+        else:
+            article_id_set.add(article[0][1])
 
     list_name = "Sorted_List_{}.txt".format(config.which_wiki)
-    with open(list_name, "w") as of:
-        of.write("Article Name\tArticle ID\tPage Size\tPage Links\tLang Links\tPage Views\tScore\n")
-        for article in sorted_article_list[:max_idx]:
-            for idx in list(range(6)):
-                try:
-                    of.write("{}\t".format(article[0][idx]))
-                except:
-                    of.write("None\t")
-            of.write("{}\n".format(article[1]))
+    print_collection(article_id_set, all_articles, list_name)
 
 
 def check_sanity(all_files):

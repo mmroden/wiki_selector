@@ -38,12 +38,10 @@ so large that, on Windows 10 at least, disk swap needs to be engaged.  At that p
 using more cores is probably outweighed by hitting the disk.
 
 
-To get a sorted list, invoke from the interpreter:
+To get a sorted list, invoke from the command line:
 
-from info_prep import print_list_sorted_by_metric
-print_list_sorted_by_metric()
+python print_list_by_score.py
 
-To get the list of seeds, invoke from the interpreter:
+To get the list of seed articles, invoke from the interpreter:
 
-from info_prep import get_seed_articles
-seeds = get_seed_articles()
+python print_list_by_seeds.py
