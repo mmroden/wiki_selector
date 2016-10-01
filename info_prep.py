@@ -271,6 +271,22 @@ def print_collection(article_id_set, all_articles, filename):
             of.write("\n")
 
 
+def decompress_chunk(decompressor, data, encoding, default_max=1000000):
+    links = None
+    curr_max = default_max
+    while not links and curr_max > 0:
+        try:
+            links = decompressor.decompress(data=data, max_length=curr_max).decode(encoding)
+        except:
+            curr_max -= 100
+    if links:
+        return links
+    else:
+        return None
+
+
+
+
 def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
 
     page_file_name = os.path.join(config.which_wiki, 'pages.lzma')
@@ -281,13 +297,21 @@ def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
     # if the seed set size + the linked size is contained in the target size, expand the
     # seed set and repeat
     title_set = set()
-    encoding = 'utf-8'
-    with lzma.open(link_file_name) as link_file:
-        links = link_file.read()  # .decode(encoding, errors='replace')
-        for link_line in links:
-            tup = tuple(entry for entry in link_line.split('\t'))
-            if tup[0] in seed_set:
-                title_set.add(tup[1])
+    decompressor = lzma.LZMADecompressor()
+    with open(link_file_name, 'rb') as link_file:
+        data = link_file.read()
+        # now, decompress a chunk at a time
+        # if the line doesn't end in a carriage return, keep that last bit for the next line
+        links = decompress_chunk(decompressor, data, encoding)
+        count = 1
+        while not decompressor.needs_input:
+            print("reading decompressed lines {}".format(count))
+            count += 1
+            for link_line in links:  # do I need to worry about incomplete lines?
+                tup = tuple(entry for entry in link_line.split('\t'))
+                if tup[0] in seed_set:
+                    title_set.add(tup[1])
+            links = decompress_chunk(decompressor, decompressor.unused_data, encoding)
     print ("Link Files have been imported.")
     expanded_id_set = set()
 
