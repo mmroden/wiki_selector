@@ -6,14 +6,9 @@ import os
 def main():
     if not os.path.exists(config.which_wiki):
         os.makedirs(config.which_wiki)
-        print("making the directory")
-    else:
-        print("that directory exists")
-    with FTP(host=config.ftp_site,
+    with FTP(source_address=(config.ftp_site, config.ftp_port),
              user=config.ftp_user,
-             passwd=config.ftp_pass,
-             port=config.ftp_port,
-             acct='') as ftp:
+             passwd=config.ftp_pass) as ftp:
         ftp.cwd(config.which_wiki)
         all_files = ftp.nlst()
         for file in all_files:

@@ -2,7 +2,7 @@ import os
 
 
 ftp_site = os.environ.get('FTP_SITE', 'wp1.kiwix.org')
-ftp_user = os.environ.get('FTP_USER', 'ftp')
+ftp_user = os.environ.get('FTP_USER', 'wp1')
 ftp_pass = os.environ.get('FTP_PASS')  # going to need to get one of these
 ftp_port = int(os.environ.get('FTP_PORT', 20))
 
