@@ -271,12 +271,13 @@ def print_collection(article_id_set, all_articles, filename):
             of.write("\n")
 
 
-def decompress_chunk(decompressor, data, encoding, default_max=1000000):
+def decompress_chunk(decompressor, data, encoding, default_max=100000000):
     links = None
     curr_max = default_max
     while not links and curr_max > 0:
         try:
-            links = decompressor.decompress(data=data, max_length=curr_max).decode(encoding)
+            links = decompressor.decompress(data=data,
+                                            max_length=curr_max).decode(encoding, errors='replace')
         except:
             curr_max -= 100
     if links:
@@ -285,18 +286,28 @@ def decompress_chunk(decompressor, data, encoding, default_max=1000000):
         return None
 
 
-
-
 def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
 
     page_file_name = os.path.join(config.which_wiki, 'pages.lzma')
     link_file_name = os.path.join(config.which_wiki, 'pagelinks.lzma')
 
+    # first, get the title to id translation
+    title_to_id = {}
+    with lzma.open(page_file_name) as page_file:
+        pages = page_file.read().decode(encoding, errors='replace')
+        for page_line in pages:
+            tup = tuple(entry for entry in page_line.split('\t'))
+            if len(tup) > 1:
+                if tup[1] not in title_to_id:  # redirects?
+                    title_to_id[tup[1]] = tup[0]
+
+    print ("Title to ID mapper read in")
+
     # first, we go through the links, and build up a set of titles that they are linked to
     # then, we go through the page set and find the ids for those titles.
     # if the seed set size + the linked size is contained in the target size, expand the
     # seed set and repeat
-    title_set = set()
+    title_map = {}
     decompressor = lzma.LZMADecompressor()
     with open(link_file_name, 'rb') as link_file:
         data = link_file.read()
@@ -309,18 +320,17 @@ def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
             count += 1
             for link_line in links:  # do I need to worry about incomplete lines?
                 tup = tuple(entry for entry in link_line.split('\t'))
-                if tup[0] in seed_set:
-                    title_set.add(tup[1])
+                try:
+                    id_from_title = int(title_to_id[tup[1]])
+                except:
+                    pass  # broken somehow
+                try:
+                    title_map[tup[0]] += [id_from_title]
+                except:
+                    title_map[tup[0]] = [id_from_title]
             links = decompress_chunk(decompressor, decompressor.unused_data, encoding)
     print ("Link Files have been imported.")
     expanded_id_set = set()
-
-    with lzma.open(page_file_name) as page_file:
-        pages = page_file.read()  # .decode(encoding, errors='replace')
-        for page_line in pages:
-            tup = tuple(entry for entry in page_line.split('\t'))
-            if tup[1] in title_set:
-                expanded_id_set.add(tup[0])
 
     print("Expanded set created now.")
     # now, do a size check
