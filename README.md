@@ -3,10 +3,13 @@ Creating Wiki Subsets
 ---------------------
 
 
+This repo requires python3!
+
 This project will create subsets of the wikipedia that will fit into a constrained size.
 
 To use it:
 
+    virtualenv venv (to run inside a venv; again, this requires python3, so make sure you're making the right venv)
     pip install -r requirements.txt  (may want to put this into a venv, up to you)
     python retrieve_files.py
     python generate_collections.py
