@@ -395,8 +395,9 @@ def resolve_all_links_and_redirects(encoding='utf-8'):
                     try:
                         id_from_title = int(resolved_title_to_id[tup[1]])
                     except:
-                        print ("tup {} from link_line {} is not complete".format(tup, link_line))
-                        print ("page id {}".format(page_title_to_id[tup[1]]))
+                        if config.testing:
+                            print ("tup {} from link_line {} broke somehow.".format(tup, link_line))
+                        # print ("page id {}".format(page_title_to_id[tup[1]]))
                         link_line_failures += 1
                     if id_from_title:  # two try/excepts in case id_from_title is busted
                         try:
