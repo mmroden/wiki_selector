@@ -56,6 +56,9 @@ precedence.  This script uses the parameters for print_list_by_score.py, as well
     MIN_EMPH: the number of articles to include from each of the emphasized project for the starting
         seed.
 
+Growing seeds requires a computer with at least 22gb of RAM to fit everything into memory, so use
+at your own risk if you don't have that much RAM.
+
 There is also code in there for doing list generation by genetic algorithms.  This code is not yet ready
 for prime time, and should probably be avoided.
 
