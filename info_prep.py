@@ -287,31 +287,31 @@ def decompress_chunk(decompressor, data, encoding, default_max=1000000000):
         return None
 
 
-def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
-
+def resolve_all_links_and_redirects(encoding='utf-8'):
     page_file_name = os.path.join(config.which_wiki, 'pages.lzma')
     link_file_name = os.path.join(config.which_wiki, 'pagelinks.lzma')
     redirect_file_name = os.path.join(config.which_wiki, 'redirects.lzma')
 
-    # first, get the title to id translation
-    title_to_id = {}
-    for article_tup in all_articles.values():
-        title_to_id[article_tup[0]] = int(article_tup[1])
-
-    print ("Title to ID mapper read in.  Length: {}".format(len(title_to_id)))
-
     page_id_to_title = {}
     page_title_to_id = {}
+    resolved_ids = set()
+    resolved_title_to_id = {}  # the final result of this work
     with lzma.open(page_file_name) as page_file:
         pages = page_file.read().decode(encoding, errors='replace').split('\n')
+        count = 0
         for page in pages:
             tup = tuple(entry for entry in page.split('\t'))
             if len(tup) > 1:
                 page_id_to_title[int(tup[0])] = tup[1]  # gonna go from id to title
             # so that redirects go from their own title to the redirected id
                 page_title_to_id[tup[1]] = int(tup[0])
+            if len(tup) > 3:
+                if int(tup[3]) == 0:
+                    resolved_ids.add(int(tup[0]))
+                    resolved_title_to_id[tup[1]] = int(tup[0])
 
     print ("Page file read in.  Length: {}".format(len(page_id_to_title)))
+    print ("Number of resolved IDs: {}".format(len(resolved_ids)))
     num_redirect_failures = 0
     num_redirect_successes = 0
     with lzma.open(redirect_file_name) as redirect_file:
@@ -333,11 +333,14 @@ def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
                     redirect_count = 0
                     current_title = tup[1]
                     current_id = int(page_title_to_id[current_title])
-                    while current_id not in all_articles and redirect_count < 50:  # atrociously large, in case there are cycles
+                    while current_id not in resolved_ids and redirect_count < 50:  # atrociously large, in case there are cycles
                         current_title = page_id_to_title[current_id]
                         current_id = int(page_title_to_id[current_title])
                         redirect_count += 1
-                    title_to_id[tup[1]] = current_id
+                    if tup[1] not in resolved_title_to_id:
+                        resolved_title_to_id[tup[1]] = current_id
+                    else:
+                        print ("Already resolved {} to {}".format(tup[1], resolved_title_to_id[tup[1]]))
                     num_redirect_successes += 1
                 except Exception as e:
                     num_redirect_failures += 1
@@ -359,7 +362,7 @@ def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
     # then, we go through the page set and find the ids for those titles.
     # if the seed set size + the linked size is contained in the target size, expand the
     # seed set and repeat
-    title_map = {}
+    link_map = {}
     max_chunk_size = 1000000 if config.testing else 1000000000
     decompressor = lzma.LZMADecompressor()
     with open(link_file_name, 'rb') as link_file:
@@ -380,19 +383,27 @@ def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
                 if len(tup) > 1:
                     id_from_title = None
                     try:
-                        id_from_title = int(title_to_id[tup[1]])
+                        id_from_title = int(resolved_title_to_id[tup[1]])
                     except:
                         print ("tup {} from link_line {} is not complete".format(tup, link_line))
+                        print ("page id {}".format(page_title_to_id[tup[1]]))
+                        print ("page 
                         link_line_failures += 1
                     if id_from_title:  # two try/excepts in case id_from_title is busted
                         try:
-                            title_map[tup[0]] += [id_from_title]
+                            link_map[tup[0]] += [id_from_title]
                         except:
-                            title_map[tup[0]] = [id_from_title]
+                            link_map[tup[0]] = [id_from_title]
                         link_line_successes += 1
             links = decompress_chunk(decompressor, decompressor.unused_data, encoding, max_chunk_size)
-    print ("Link Files have been imported. Length of links: {}".format(len(title_map)))
+    print ("Link Files have been imported. Length of links: {}".format(len(link_map)))
     print ("Link line successes: {} failures: {}".format(link_line_successes, link_line_failures))
+    return link_map
+    
+
+def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
+
+
     expanded_id_set = set()
 
     print("Expanded set created now.")
