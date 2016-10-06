@@ -304,29 +304,31 @@ def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
         pages = page_file.read().decode(encoding, errors='replace').split('\n')
         for page in pages:
             tup = tuple(entry for entry in page.split('\t'))
-            page_title_to_id[int(tup[0])] = tup[1]  # gonna go from id to title
+            if len(tup) > 1:
+                page_title_to_id[int(tup[0])] = tup[1]  # gonna go from id to title
             # so that redirects go from their own title to the redirected id
 
     print ("Page file read in.  Length: {}".format(len(page_title_to_id)))
     with lzma.open(redirect_file_name) as redirect_file:
         redirects = redirect_file.read().decode(encoding, errors='replace').split('\n')
-        count = 0
+        # count = 0
         for redirect in redirects:
             tup = tuple(entry for entry in redirect.split('\t'))
             # file is actually organized as 'redirect page id, final page title'
             # that has to be unraveled
             # to do that, use previously read in pages to get the page title
             # and map the page_title_to_id title to the redirected title to redirected id
-            print (tup)
-            print (page_title_to_id[int(tup[0])], title_to_id[tup[1]])
-            title_to_id[page_title_to_id[int(tup[0])]] = title_to_id[tup[1]]
-            # that is, the redirect id needs a title.  page_title_to_id provides a title, that becomes a key.
-            # the key needs a value.  The second entry in the line is the title that the redirect points to
-            # so we go one step further, and look for the page id that the redirect goes to
-            # now the redirect points directly at the target page.  That way, we can get real pages here.
-            count += 1
-            if count > 10:
-                exit(0)
+            if len(tup) > 1:
+                # print (tup)
+                # print (page_title_to_id[int(tup[0])], title_to_id[tup[1]])
+                title_to_id[page_title_to_id[int(tup[0])]] = title_to_id[tup[1]]
+                # that is, the redirect id needs a title.  page_title_to_id provides a title, that becomes a key.
+                # the key needs a value.  The second entry in the line is the title that the redirect points to
+                # so we go one step further, and look for the page id that the redirect goes to
+                # now the redirect points directly at the target page.  That way, we can get real pages here.
+                # count += 1
+                # if count > 10:
+                #    exit(0)
 
     # first, we go through the links, and build up a set of titles that they are linked to
     # then, we go through the page set and find the ids for those titles.
