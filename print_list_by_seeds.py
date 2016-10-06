@@ -24,28 +24,38 @@ def grow_seeds(seeds, all_articles, link_map):
     Given a set of seeds, all_articles, and link_map, grow the seeds according to links
     The growth will be up to the configured size, truncating the addition.
     '''
-    growing = True
-    final_seeds = seeds
     current_seeds = seeds
+    current_scores = [(article_id, calculate_article_score(all_articles[article_id]))
+                      for article_id in seeds]
+    seed_score = sum(entry[1] for entry in current_scores)
+    growing = seed_score > config.target_size
+    print ("Current size: {} Target size: {} growing: {}".format(seed_score, config.target_size, growing))
     while growing:
         # get links by seed
         new_set = set()  # set of article ids
-        new_article_set = []  # set of article tuples
+        new_article_scores = []  # set of article tuples
         for seed in current_seeds:
             new_set.add(tuple(id for id in link_map[int(seed)]))
-        new_article_set = [(article_id, calculate_article_score(all_articles[article_id]))
-                           for article_id in new_set]
-        # calculate the scores
-            
-            
+        new_article_scores = [(article_id, calculate_article_score(all_articles[article_id]))
+                              for article_id in new_set]
+        score_sum = sum(entry[1] for entry in new_article_scores)
+        if score_sum + seed_score > config.target_size:
+            print ("Hit size limit, truncating current set of candidate articles.")
+        else:
+            print ("Size limit not hit, growing further out.")
+            current_seeds = current_seeds.union(new_set)
+            seed_score = score_sum + seed_score
+    return current_seeds
+
 
 def main():
     link_map = read_link_map()
     seeds, all_articles = get_seed_articles()
     list_name = "Seed_List_{}.txt".format(config.which_wiki)
-    
     print_collection(seeds, all_articles, list_name)
-
+    grown_seeds = grow_seeds(seeds, all_articles, link_map)
+    grown_list_name = "Grown_Seed_List_{}.txt".format(config.which_wiki)
+    print_collection(grown_seeds, all_articles, grown_list_name)
 
 
 if __name__ == "__main__":
