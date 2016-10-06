@@ -403,9 +403,9 @@ def resolve_all_links_and_redirects(encoding='utf-8'):
                         link_line_failures += 1
                     if id_from_title:  # two try/excepts in case id_from_title is busted
                         try:
-                            link_map[tup[0]] += [id_from_title]
+                            link_map[int(tup[0])] += [id_from_title]
                         except:
-                            link_map[tup[0]] = [id_from_title]
+                            link_map[int(tup[0])] = [id_from_title]
                         link_line_successes += 1
             links = decompress_chunk(decompressor, decompressor.unused_data, encoding, max_chunk_size)
     print ("Link Files have been imported. Length of links: {}".format(len(link_map)))

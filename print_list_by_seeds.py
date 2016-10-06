@@ -1,4 +1,5 @@
-from info_prep import (get_seed_articles, print_collection, calculate_article_score)
+from info_prep import (get_seed_articles, print_collection,
+                       calculate_article_score, resolve_all_links_and_redirects)
 import config
 import pickle
 import os
@@ -27,26 +28,26 @@ def grow_seeds(seeds, all_articles, link_map):
     The growth will be up to the configured size, truncating the addition.
     '''
     current_seeds = seeds
-    current_scores = [(article_id, calculate_article_score(all_articles[article_id], None))
-                      for article_id in seeds]
-    seed_score = sum(entry[1] for entry in current_scores)
-    growing = seed_score > config.target_size
-    print ("Current size: {} Target size: {} growing: {}".format(seed_score, config.target_size, growing))
+    current_size = sum(all_articles[article_id][2] for article_id in seeds)
+    growing = current_size < config.target_size
+    print ("Current size: {} Target size: {} growing: {}".format(current_size, config.target_size, growing))
     while growing:
         # get links by seed
         new_set = set()  # set of article ids
         new_article_scores = []  # set of article tuples
         for seed in current_seeds:
-            new_set.add(tuple(id for id in link_map[int(seed)]))
-        new_article_scores = [(article_id, calculate_article_score(all_articles[article_id], None))
-                              for article_id in new_set]
-        score_sum = sum(entry[1] for entry in new_article_scores)
-        if score_sum + seed_score > config.target_size:
+            if int(seed) in link_map:
+                new_set.add(id for id in link_map[int(seed)])
+            else:
+                print("Unable to grow from seed {}".format(int(seed)))
+        size_sum = sum(all_articles[entry][2] for entry in new_set)
+        print("Expanded set size: {}".format(size_sum))
+        if size_sum + current_size > config.target_size:
             print ("Hit size limit, truncating current set of candidate articles.")
         else:
             print ("Size limit not hit, growing further out.")
             current_seeds = current_seeds.union(new_set)
-            seed_score = score_sum + seed_score
+            seed_score = size_sum + current_size
     return current_seeds
 
 
