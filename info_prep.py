@@ -4,6 +4,7 @@ import os
 import config
 import operator
 import math
+import sys
 
 
 QUALITY_RANKS = {"FA-Class": 2,
@@ -299,16 +300,20 @@ def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
 
     print ("Title to ID mapper read in.  Length: {}".format(len(title_to_id)))
 
+    page_id_to_title = {}
     page_title_to_id = {}
     with lzma.open(page_file_name) as page_file:
         pages = page_file.read().decode(encoding, errors='replace').split('\n')
         for page in pages:
             tup = tuple(entry for entry in page.split('\t'))
             if len(tup) > 1:
-                page_title_to_id[int(tup[0])] = tup[1]  # gonna go from id to title
+                page_id_to_title[int(tup[0])] = tup[1]  # gonna go from id to title
             # so that redirects go from their own title to the redirected id
+                page_title_to_id[tup[1]] = int(tup[0])
 
-    print ("Page file read in.  Length: {}".format(len(page_title_to_id)))
+    print ("Page file read in.  Length: {}".format(len(page_id_to_title)))
+    num_redirect_failures = 0
+    num_redirect_successes = 0
     with lzma.open(redirect_file_name) as redirect_file:
         redirects = redirect_file.read().decode(encoding, errors='replace').split('\n')
         # count = 0
@@ -318,10 +323,34 @@ def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
             # that has to be unraveled
             # to do that, use previously read in pages to get the page title
             # and map the page_title_to_id title to the redirected title to redirected id
+            # problem! there can be multiple levels of redirects.  gah.
             if len(tup) > 1:
                 # print (tup)
                 # print (page_title_to_id[int(tup[0])], title_to_id[tup[1]])
-                title_to_id[page_title_to_id[int(tup[0])]] = title_to_id[tup[1]]
+                # have to follow the rabbit hole down to find the vast majority of redirects
+                # of redirects.  That means looking until there's a hit in the title_to_id set
+                try:
+                    redirect_count = 0
+                    current_title = tup[1]
+                    current_id = int(page_title_to_id[current_title])
+                    while current_id not in all_articles and redirect_count < 50:  # atrociously large, in case there are cycles
+                        current_title = page_id_to_title[current_id]
+                        current_id = int(page_title_to_id[current_title])
+                        redirect_count += 1
+                    title_to_id[tup[1]] = current_id
+                    num_redirect_successes += 1
+                except Exception as e:
+                    num_redirect_failures += 1
+                    # print ("Tup {} broke after {} redirect disentanglements with exception {}".format(tup, redirect_count, sys.exc_info()[0]))
+                    # print ("Current title {} and current id {}".format(tup[1], current_id))
+                    # try:
+                        # print("Trying to print the page title {}".format(page_id_to_title[int(tup[0])]))
+                        # print("Could try {} as the final id".format(page_title_to_id[tup[1]]))
+                        # print("That id produces article tuple {}".format(all_articles[page_title_to_id[tup[1]]]))
+                        # print("Trying to print final id {}".format(title_to_id[tup[1]]))
+                    # except:
+                    #    pass
+                            
                 # that is, the redirect id needs a title.  page_title_to_id provides a title, that becomes a key.
                 # the key needs a value.  The second entry in the line is the title that the redirect points to
                 # so we go one step further, and look for the page id that the redirect goes to
@@ -330,6 +359,9 @@ def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
                 # if count > 10:
                 #    exit(0)
 
+    print ("Redirects complete. {} succeeded, {} failed.".format(num_redirect_successes, num_redirect_failures))
+                
+    exit(0)
     # first, we go through the links, and build up a set of titles that they are linked to
     # then, we go through the page set and find the ids for those titles.
     # if the seed set size + the linked size is contained in the target size, expand the
