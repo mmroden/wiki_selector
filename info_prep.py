@@ -188,10 +188,10 @@ def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False, remo
                     parsed_lines[real_tup[page_id_index]] = real_tup
             else:
                 parsed_lines[tup[page_id_index]] = tup
-        if config.testing:
-            count += 1
-            if count > config.testing_size:  # a subset of articles
-               break
+#        if config.testing:
+#            count += 1
+#            if count > config.testing_size:  # a subset of articles
+#               break
     print("File {} is parsed, precull count is {}".format(file_name, len(parsed_lines)))
     if all_file:
         culled_lines = cull_lines(parsed_lines, page_id_index)
@@ -271,7 +271,7 @@ def print_collection(article_id_set, all_articles, filename):
             of.write("\n")
 
 
-def decompress_chunk(decompressor, data, encoding, default_max=100000000):
+def decompress_chunk(decompressor, data, encoding, default_max=1000000000):
     links = None
     curr_max = default_max
     while not links and curr_max > 0:
@@ -293,43 +293,43 @@ def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
 
     # first, get the title to id translation
     title_to_id = {}
-    with lzma.open(page_file_name) as page_file:
-        pages = page_file.read().decode(encoding, errors='replace')
-        for page_line in pages:
-            tup = tuple(entry for entry in page_line.split('\t'))
-            if len(tup) > 1:
-                if tup[1] not in title_to_id:  # redirects?
-                    title_to_id[tup[1]] = tup[0]
+    for article_tup in all_articles.values():
+        title_to_id[article_tup[0]] = int(article_tup[1])
 
-    print ("Title to ID mapper read in")
-
+    print ("Title to ID mapper read in.  Length: {}".format(len(title_to_id)))
+    
     # first, we go through the links, and build up a set of titles that they are linked to
     # then, we go through the page set and find the ids for those titles.
     # if the seed set size + the linked size is contained in the target size, expand the
     # seed set and repeat
     title_map = {}
+    max_chunk_size = 1000000000
     decompressor = lzma.LZMADecompressor()
     with open(link_file_name, 'rb') as link_file:
         data = link_file.read()
         # now, decompress a chunk at a time
         # if the line doesn't end in a carriage return, keep that last bit for the next line
-        links = decompress_chunk(decompressor, data, encoding)
+        links = decompress_chunk(decompressor, data, encoding, max_chunk_size)
         count = 1
         while not decompressor.needs_input:
             print("reading decompressed lines {}".format(count))
             count += 1
+            if config.testing and count > 2:
+                break
             for link_line in links:  # do I need to worry about incomplete lines?
                 tup = tuple(entry for entry in link_line.split('\t'))
+                id_from_title = None
                 try:
                     id_from_title = int(title_to_id[tup[1]])
                 except:
                     pass  # broken somehow
-                try:
-                    title_map[tup[0]] += [id_from_title]
-                except:
-                    title_map[tup[0]] = [id_from_title]
-            links = decompress_chunk(decompressor, decompressor.unused_data, encoding)
-    print ("Link Files have been imported.")
+                if id_from_title:  # two try/excepts in case id_from_title is busted
+                    try:
+                        title_map[tup[0]] += [id_from_title]
+                    except:
+                        title_map[tup[0]] = [id_from_title]
+            links = decompress_chunk(decompressor, decompressor.unused_data, encoding, max_chunk_size)
+    print ("Link Files have been imported. Length of links: {}".format(len(title_map)))
     expanded_id_set = set()
 
     print("Expanded set created now.")
