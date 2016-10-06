@@ -290,6 +290,7 @@ def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
 
     page_file_name = os.path.join(config.which_wiki, 'pages.lzma')
     link_file_name = os.path.join(config.which_wiki, 'pagelinks.lzma')
+    redirect_file_name = os.path.join(config.which_wiki, 'redirects.lzma')
 
     # first, get the title to id translation
     title_to_id = {}
@@ -297,19 +298,48 @@ def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
         title_to_id[article_tup[0]] = int(article_tup[1])
 
     print ("Title to ID mapper read in.  Length: {}".format(len(title_to_id)))
-    
+
+    page_title_to_id = {}
+    with lzma.open(page_file_name) as page_file:
+        pages = page_file.read().decode(encoding, errors='replace').split('\n')
+        for page in pages:
+            tup = tuple(entry for entry in page.split('\t'))
+            page_title_to_id[int(tup[0])] = tup[1]  # gonna go from id to title
+            # so that redirects go from their own title to the redirected id
+
+    print ("Page file read in.  Length: {}".format(len(page_title_to_id)))
+    with lzma.open(redirect_file_name) as redirect_file:
+        redirects = redirect_file.read().decode(encoding, errors='replace').split('\n')
+        count = 0
+        for redirect in redirects:
+            tup = tuple(entry for entry in redirect.split('\t'))
+            # file is actually organized as 'redirect page id, final page title'
+            # that has to be unraveled
+            # to do that, use previously read in pages to get the page title
+            # and map the page_title_to_id title to the redirected title to redirected id
+            print (tup)
+            print (page_title_to_id[int(tup[0])], title_to_id[tup[1]])
+            title_to_id[page_title_to_id[int(tup[0])]] = title_to_id[tup[1]]
+            # that is, the redirect id needs a title.  page_title_to_id provides a title, that becomes a key.
+            # the key needs a value.  The second entry in the line is the title that the redirect points to
+            # so we go one step further, and look for the page id that the redirect goes to
+            # now the redirect points directly at the target page.  That way, we can get real pages here.
+            count += 1
+            if count > 10:
+                exit(0)
+
     # first, we go through the links, and build up a set of titles that they are linked to
     # then, we go through the page set and find the ids for those titles.
     # if the seed set size + the linked size is contained in the target size, expand the
     # seed set and repeat
     title_map = {}
-    max_chunk_size = 1000000000
+    max_chunk_size = 1000000 if config.testing else 1000000000
     decompressor = lzma.LZMADecompressor()
     with open(link_file_name, 'rb') as link_file:
         data = link_file.read()
         # now, decompress a chunk at a time
         # if the line doesn't end in a carriage return, keep that last bit for the next line
-        links = decompress_chunk(decompressor, data, encoding, max_chunk_size)
+        links = decompress_chunk(decompressor, data, encoding, max_chunk_size).split('\n')
         count = 1
         while not decompressor.needs_input:
             print("reading decompressed lines {}".format(count))
@@ -322,7 +352,7 @@ def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
                 try:
                     id_from_title = int(title_to_id[tup[1]])
                 except:
-                    pass  # broken somehow
+                    print ("tup {} from link_line {} is not complete".format(tup, link_line))
                 if id_from_title:  # two try/excepts in case id_from_title is busted
                     try:
                         title_map[tup[0]] += [id_from_title]
