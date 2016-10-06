@@ -388,6 +388,8 @@ def resolve_all_links_and_redirects(encoding='utf-8'):
             count += 1
             if config.testing and count > 2:
                 break
+            if not links:
+                break
             for link_line in links:  # do I need to worry about incomplete lines?
                 tup = tuple(entry for entry in link_line.split('\t'))
                 if len(tup) > 1:
