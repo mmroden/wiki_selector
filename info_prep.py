@@ -278,7 +278,7 @@ def decompress_chunk(decompressor, data, encoding, default_max=1000000000):
     while not links and curr_max > 0:
         try:
             links = decompressor.decompress(data=data,
-                                            max_length=curr_max).decode(encoding, errors='replace')
+                                            max_length=curr_max).decode(encoding, errors='replace').split('\n')
         except:
             curr_max -= 100
     if links:
@@ -379,7 +379,7 @@ def resolve_all_links_and_redirects(encoding='utf-8'):
         data = link_file.read()
         # now, decompress a chunk at a time
         # if the line doesn't end in a carriage return, keep that last bit for the next line
-        links = decompress_chunk(decompressor, data, encoding, max_chunk_size).split('\n')
+        links = decompress_chunk(decompressor, data, encoding, max_chunk_size)
         count = 1
         link_line_failures = 0
         link_line_successes = 0
