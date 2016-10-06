@@ -37,13 +37,33 @@ def grow_seeds(seeds, all_articles, link_map):
         new_article_scores = []  # set of article tuples
         for seed in current_seeds:
             if int(seed) in link_map:
-                new_set.add(id for id in link_map[int(seed)])
+                for id in link_map[int(seed)]:
+                    new_set.add(id)
             else:
                 print("Unable to grow from seed {}".format(int(seed)))
-        size_sum = sum(all_articles[entry][2] for entry in new_set)
+        size_sum = 0
+        for entry in new_set:
+            if entry in all_articles:
+                size_sum += all_articles[entry][2]
         print("Expanded set size: {}".format(size_sum))
         if size_sum + current_size > config.target_size:
             print ("Hit size limit, truncating current set of candidate articles.")
+            considered_group = []
+            # note that excluded projects are already removed from all_articles
+            for article_id in new_set:  # can refine this with project-specific scores.  
+                if article_id in all_articles:
+                    considered_group += [[article_id, calculate_article_score(all_articles[article_id], None)]]
+            sorted_group = sorted(considered_group, key=lambda x:x[1], reverse=True)
+            grown_group = set()
+            target_size = config.target_size - current_size
+            added_size = 0
+            for article_pair in sorted_group:
+                added_size += article_pair[1]
+                if added_size > target_size:
+                    break
+                else:
+                    grown_group.add(article_pair[0])
+            current_seeds = current_seeds.union(grown_group)
         else:
             print ("Size limit not hit, growing further out.")
             current_seeds = current_seeds.union(new_set)
