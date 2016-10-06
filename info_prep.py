@@ -326,7 +326,11 @@ def resolve_all_links_and_redirects(encoding='utf-8'):
             # problem! there can be multiple levels of redirects.  gah.
             if len(tup) > 1:
                 # print (tup)
-                # print (page_title_to_id[int(tup[0])], title_to_id[tup[1]])
+                try:
+                    original_page_title = page_id_to_title[int(tup[0])]
+                except:
+                    continue
+                # print (original_page_title)
                 # have to follow the rabbit hole down to find the vast majority of redirects
                 # of redirects.  That means looking until there's a hit in the title_to_id set
                 try:
@@ -337,10 +341,13 @@ def resolve_all_links_and_redirects(encoding='utf-8'):
                         current_title = page_id_to_title[current_id]
                         current_id = int(page_title_to_id[current_title])
                         redirect_count += 1
-                    if tup[1] not in resolved_title_to_id:
-                        resolved_title_to_id[tup[1]] = current_id
+                    if original_page_title not in resolved_title_to_id:
+                        resolved_title_to_id[original_page_title] = current_id
                     else:
-                        print ("Already resolved {} to {}".format(tup[1], resolved_title_to_id[tup[1]]))
+                        if current_id != resolved_title_to_id[original_page_title]:
+                            print ("Already resolved {} to {} not {}".format(tup[1],
+                                                                             resolved_title_to_id[original_page_title],
+                                                                             current_id))
                     num_redirect_successes += 1
                 except Exception as e:
                     num_redirect_failures += 1
@@ -356,8 +363,11 @@ def resolve_all_links_and_redirects(encoding='utf-8'):
                        pass
                             '''
 
-    print ("Redirects complete. {} succeeded, {} failed.".format(num_redirect_successes, num_redirect_failures))
-                
+    print ("Redirects complete. {} succeeded, {} failed.".format(num_redirect_successes,
+                                                                 num_redirect_failures))
+    print ("Total resolved titles: {} vs total titles {}.".format(len(resolved_title_to_id),
+                                                                  len(page_title_to_id)))
+
     # first, we go through the links, and build up a set of titles that they are linked to
     # then, we go through the page set and find the ids for those titles.
     # if the seed set size + the linked size is contained in the target size, expand the
