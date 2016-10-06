@@ -58,12 +58,13 @@ def grow_seeds(seeds, all_articles, link_map):
             target_size = config.target_size - current_size
             added_size = 0
             for article_pair in sorted_group:
-                added_size += article_pair[1]
+                added_size += all_articles[article_pair[0]][2]  # add the size, not the score; already sorted
                 if added_size > target_size:
+                    print("Hit target size {} with size {}".format(target_size, added_size))
                     break
                 else:
                     grown_group.add(article_pair[0])
-            current_seeds = current_seeds.union(grown_group)
+            return current_seeds.union(grown_group)
         else:
             print ("Size limit not hit, growing further out.")
             current_seeds = current_seeds.union(new_set)
