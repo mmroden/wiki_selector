@@ -341,27 +341,20 @@ def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
                     num_redirect_successes += 1
                 except Exception as e:
                     num_redirect_failures += 1
-                    # print ("Tup {} broke after {} redirect disentanglements with exception {}".format(tup, redirect_count, sys.exc_info()[0]))
-                    # print ("Current title {} and current id {}".format(tup[1], current_id))
-                    # try:
-                        # print("Trying to print the page title {}".format(page_id_to_title[int(tup[0])]))
-                        # print("Could try {} as the final id".format(page_title_to_id[tup[1]]))
-                        # print("That id produces article tuple {}".format(all_articles[page_title_to_id[tup[1]]]))
-                        # print("Trying to print final id {}".format(title_to_id[tup[1]]))
-                    # except:
-                    #    pass
-                            
-                # that is, the redirect id needs a title.  page_title_to_id provides a title, that becomes a key.
-                # the key needs a value.  The second entry in the line is the title that the redirect points to
-                # so we go one step further, and look for the page id that the redirect goes to
-                # now the redirect points directly at the target page.  That way, we can get real pages here.
-                # count += 1
-                # if count > 10:
-                #    exit(0)
+                    old_print_statements = '''
+                    print ("Tup {} broke after {} redirect disentanglements with exception {}".format(tup, redirect_count, sys.exc_info()[0]))
+                    print ("Current title {} and current id {}".format(tup[1], current_id))
+                    try:
+                        print("Trying to print the page title {}".format(page_id_to_title[int(tup[0])]))
+                        print("Could try {} as the final id".format(page_title_to_id[tup[1]]))
+                        print("That id produces article tuple {}".format(all_articles[page_title_to_id[tup[1]]]))
+                        print("Trying to print final id {}".format(title_to_id[tup[1]]))
+                    except:
+                       pass
+                            '''
 
     print ("Redirects complete. {} succeeded, {} failed.".format(num_redirect_successes, num_redirect_failures))
                 
-    exit(0)
     # first, we go through the links, and build up a set of titles that they are linked to
     # then, we go through the page set and find the ids for those titles.
     # if the seed set size + the linked size is contained in the target size, expand the
@@ -375,6 +368,8 @@ def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
         # if the line doesn't end in a carriage return, keep that last bit for the next line
         links = decompress_chunk(decompressor, data, encoding, max_chunk_size).split('\n')
         count = 1
+        link_line_failures = 0
+        link_line_successes = 0
         while not decompressor.needs_input:
             print("reading decompressed lines {}".format(count))
             count += 1
@@ -382,18 +377,22 @@ def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
                 break
             for link_line in links:  # do I need to worry about incomplete lines?
                 tup = tuple(entry for entry in link_line.split('\t'))
-                id_from_title = None
-                try:
-                    id_from_title = int(title_to_id[tup[1]])
-                except:
-                    print ("tup {} from link_line {} is not complete".format(tup, link_line))
-                if id_from_title:  # two try/excepts in case id_from_title is busted
+                if len(tup) > 1:
+                    id_from_title = None
                     try:
-                        title_map[tup[0]] += [id_from_title]
+                        id_from_title = int(title_to_id[tup[1]])
                     except:
-                        title_map[tup[0]] = [id_from_title]
+                        print ("tup {} from link_line {} is not complete".format(tup, link_line))
+                        link_line_failures += 1
+                    if id_from_title:  # two try/excepts in case id_from_title is busted
+                        try:
+                            title_map[tup[0]] += [id_from_title]
+                        except:
+                            title_map[tup[0]] = [id_from_title]
+                        link_line_successes += 1
             links = decompress_chunk(decompressor, decompressor.unused_data, encoding, max_chunk_size)
     print ("Link Files have been imported. Length of links: {}".format(len(title_map)))
+    print ("Link line successes: {} failures: {}".format(link_line_successes, link_line_failures))
     expanded_id_set = set()
 
     print("Expanded set created now.")
