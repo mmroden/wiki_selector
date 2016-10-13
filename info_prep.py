@@ -144,6 +144,31 @@ def cull_lines(parsed_lines, page_id_index):
     return culled_lines
 
 
+def get_project_list(encoding='utf-8'):
+    '''
+    returns a list of projects from the all.lzma file and their frequencies
+    :param encoding:
+    :return:
+    '''
+    with lzma.open(os.path.join(config.which_wiki, 'all.lzma')) as page_file:
+        lines = page_file.read().decode(encoding, errors='replace')
+
+    projects = {}
+    for line in split_iter(lines):
+        try:
+            tup = tuple(number_conv(entry) for entry in line.split('\t'))
+            for entry in tup[6:]:
+                project_name = entry.split('=')[0]
+                try:
+                    projects[project_name] += 1
+                except:
+                    projects[project_name] = 1
+        except:
+            print("Had a broken line, continuing...")
+
+    return projects
+
+
 def read_file(file_name, encoding='utf-8', page_id_index=0, all_file=False, remove_excluded=True):
     """
     This function will read in a file and put it into a hash for fast access
@@ -414,8 +439,6 @@ def resolve_all_links_and_redirects(encoding='utf-8'):
     
 
 def prepare_seeded_set(seed_set, all_articles, encoding='utf-8'):
-
-
     expanded_id_set = set()
 
     print("Expanded set created now.")
