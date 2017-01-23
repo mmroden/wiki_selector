@@ -279,7 +279,7 @@ def calculate_article_score(article, project_name):
         return highest_quality + 4.0/float(3.0) * (page_view_metric + page_link_metric + lang_link_metric)
 
 
-def print_collection(article_id_set, all_articles, filename, name_only=False):
+def print_collection(article_id_set, all_articles, filename):
     """
     Given a list of article ids and the articles themselves, print everything out into
     the specified file name
@@ -287,22 +287,14 @@ def print_collection(article_id_set, all_articles, filename, name_only=False):
     :return:
     """
     with open(filename, "w") as of:
-        if not name_only:
-            of.write("Article Name\tArticle ID\tPage Size\tPage Links\tLang Links\tPage Views\n")
-            for article in article_id_set:
-                for idx in list(range(6)):
-                    try:
-                        of.write("{}\t".format(all_articles[article][idx]))
-                    except:
-                        of.write("None\t")
-                of.write("\n")
-        else:
-            of.write("Article Name\n")
-            for article in article_id_set:
+        of.write("Article Name\tArticle ID\tPage Size\tPage Links\tLang Links\tPage Views\n")
+        for article in article_id_set:
+            for idx in list(range(6)):
                 try:
-                    of.write("{}\n".format(all_articles[article][0]))
+                    of.write("{}\t".format(all_articles[article][idx]))
                 except:
-                    of.write("None\n")
+                    of.write("None\t")
+            of.write("\n")
 
 
 def decompress_chunk(decompressor, data, encoding, default_max=1000000000):
