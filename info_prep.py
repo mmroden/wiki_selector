@@ -279,7 +279,7 @@ def calculate_article_score(article, project_name):
         return highest_quality + 4.0/float(3.0) * (page_view_metric + page_link_metric + lang_link_metric)
 
 
-def print_collection(article_id_set, all_articles, filename):
+def print_collection(article_id_set, all_articles, filename, name_only=False):
     """
     Given a list of article ids and the articles themselves, print everything out into
     the specified file name
@@ -287,14 +287,22 @@ def print_collection(article_id_set, all_articles, filename):
     :return:
     """
     with open(filename, "w") as of:
-        of.write("Article Name\tArticle ID\tPage Size\tPage Links\tLang Links\tPage Views\n")
-        for article in article_id_set:
-            for idx in list(range(6)):
+        if not name_only:
+            of.write("Article Name\tArticle ID\tPage Size\tPage Links\tLang Links\tPage Views\n")
+            for article in article_id_set:
+                for idx in list(range(6)):
+                    try:
+                        of.write("{}\t".format(all_articles[article][idx]))
+                    except:
+                        of.write("None\t")
+                of.write("\n")
+        else:
+            of.write("Article Name\n")
+            for article in article_id_set:
                 try:
-                    of.write("{}\t".format(all_articles[article][idx]))
+                    of.write("{}\n".format(all_articles[article][0]))
                 except:
-                    of.write("None\t")
-            of.write("\n")
+                    of.write("None\n")
 
 
 def decompress_chunk(decompressor, data, encoding, default_max=1000000000):
@@ -524,7 +532,14 @@ def print_list_sorted_by_metric():
             article_id_set.add(article[0][1])
 
     list_name = "Sorted_List_{}.txt".format(config.which_wiki)
-    print_collection(article_id_set, all_articles, list_name)
+
+    with open(list_name, "w") as of:
+        of.write("Article Name\n")
+        for article in sorted_article_list:
+            try:
+                of.write("{}\n".format(article[0][0]))
+            except:
+                of.write("None\n")
 
 
 def check_sanity(all_files):
