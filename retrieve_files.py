@@ -28,7 +28,7 @@ def main():
     # cribbing heavily from https://stackoverflow.com/questions/1080411/retrieve-links-from-web-page-using-python-and-beautifulsoup#1080472
     if not os.path.exists(config.which_wiki):
         os.makedirs(config.which_wiki)
-    url_path = WIKI_METADATA_URL + "/" + config.which_wiki
+    url_path = config.metadata_location + config.which_wiki
     resp = requests.get(url_path)
     http_encoding = resp.encoding if 'charset' in resp.headers.get('content-type', '').lower() else None
     html_encoding = EncodingDetector.find_declared_encoding(resp.content, is_html=True)
@@ -38,7 +38,7 @@ def main():
         if link['href'].endswith('lzma'):
             print(link['href'])
             # cribbing from https://stackoverflow.com/questions/13137817/how-to-download-image-using-requests#13137873
-            lzma_resp = requests.get(url_path + "/" + link['href'], stream=True)
+            lzma_resp = requests.get(url_path + link['href'], stream=True)
             if lzma_resp.status_code == 200:
                 with open(config.which_wiki + "/" + link['href'], 'wb') as f:
                     lzma_resp.raw.decode_content = True
