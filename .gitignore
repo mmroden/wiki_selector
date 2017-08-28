@@ -8,3 +8,4 @@ Sorted_List*.txt
 venv/
 .DS_Store
 *wiki_20*-*/
+out/*
