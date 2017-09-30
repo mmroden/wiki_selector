@@ -2,18 +2,8 @@ const async = require("async");
 const path = require("path");
 const download = require("download");
 const fs = require("graceful-fs");
-const {
-  loadListFile,
-  cleanUrl,
-  getFilename,
-  prependUrl
-} = require("./_helper");
-const {
-  WIKI_LIST,
-  CONCURRENT_CONNECTIONS,
-  SAVE_PATH,
-  WIKI_DL
-} = require("./config");
+const { loadListFile, cleanUrl, getFilename, prependUrl } = require("./_helper");
+const { WIKI_LIST, CONCURRENT_CONNECTIONS, SAVE_PATH, WIKI_DL } = require("./config");
 
 function massDownloadImages(imageSources) {
   function processImage(url, callback) {
@@ -43,23 +33,21 @@ function massDownloadImages(imageSources) {
 
   function downloadImage(url, filename, saveLocation, callback) {
     console.log(`${logCounter}/${imageList.length} | downloading ${filename}`);
-    download(url)
-      .then(data => fs.writeFile(saveLocation, data, callback))
-      .catch(err => {
-        // Push image back on the queue if it is a 429 (too many requests)
-        if (err.statusCode === 429) {
-          console.log("pushing", filename, "back on the queue");
-          queue.push(url);
-        }
-        console.log("   ", err.statusCode, filename);
+    download(url).then(data => fs.writeFile(saveLocation, data, callback)).catch(err => {
+      // Push image back on the queue if it is a 429 (too many requests)
+      if (err.statusCode === 429) {
+        console.log("pushing", filename, "back on the queue");
+        queue.push(url);
+      }
+      console.log("   ", err.statusCode, filename);
 
-        // Write error out to file
-        const ERR_FILE = path.join(__dirname, "missing_images.txt");
-        fs.appendFile(ERR_FILE, `${err.statusCode} ${url}\n`, err => {
-          if (err) console.log("problems appending to error file", err);
-          callback();
-        });
+      // Write error out to file
+      const ERR_FILE = path.join(__dirname, "missing_images.txt");
+      fs.appendFile(ERR_FILE, `${err.statusCode} ${url}\n`, err => {
+        if (err) console.log("problems appending to error file", err);
+        callback();
       });
+    });
   }
 
   let logCounter = 0;
@@ -76,9 +64,7 @@ function gatherImageList(zimList) {
   let logCounter = 0;
 
   function processHtmlFile(filename, callback) {
-    console.log(
-      `${logCounter}/${zimList.length} | processing html ${filename}`
-    );
+    console.log(`${logCounter}/${zimList.length} | processing html ${filename}`);
     /* Load HTML from file, use Cheerio (like jQuery) to find all
     image tags. Take the src and add it to the master list of imageSources */
     const htmlFilePath = path.join(WIKI_DL, filename + ".html");
@@ -89,8 +75,8 @@ function gatherImageList(zimList) {
         return;
       }
       /* I am not replacing anything (the replace function doesn't mutate but 
-      returns a new object). I am using this as the replace method allows for
-      the g flag. exec does not. Kind of a hack in the name of science! :) */
+      returns a new object). I am using this because the replace method allows
+      for the g flag. exec does not. Kind of a hack in the name of science! */
       html.replace(/img.+?src="(.+?)"/g, (m, a) => imageSources[a] = 1);
       callback();
     });

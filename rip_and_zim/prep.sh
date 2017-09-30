@@ -1,4 +1,5 @@
 #! /bin/bash
+mkdir -p selections
 mkdir -p raw_wiki_articles/images
 mkdir -p processed_wiki_articles
 mkdir -p processed_wiki_articles/images

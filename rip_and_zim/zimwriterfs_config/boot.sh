@@ -1,16 +1,16 @@
 #!/bin/bash
 zimwriterfs \
---title="ZimTest" \
---description="A quick test of zimwriterfs docker" \
+--title="Wikipedia en español" \
+--description="7GB de Wikipedia" \
 --creator="Wikipedia Foundation" \
 --publisher="Reno McKenzie" \
---tags="IIAB;Wikipedia" \
+--tags="IIAB;Wikipedia;Interactive" \
 --language="en" \
 --welcome="index.html" \
 --favicon="favicon.ico" \
---withFullTextIndex \
 /articles \
 /output/$(date '+%Y-%m-%d_%H%M').zim
+# --withFullTextIndex \
 
 # Usage: zimwriterfs [mandatory arguments] [optional arguments] HTML_DIRECTORY ZIM_FILE
 

@@ -3,13 +3,7 @@ const path = require("path");
 const download = require("download");
 const fs = require("graceful-fs");
 const { loadListFile } = require("./_helper");
-const {
-  CONCURRENT_CONNECTIONS,
-  WIKI_DL,
-  MEDIA_WIKI,
-  WIKI_LIST,
-  LOG_MISSING
-} = require("./config");
+const { CONCURRENT_CONNECTIONS, WIKI_DL, MEDIA_WIKI, WIKI_LIST, LOG_MISSING } = require("./config");
 
 /* --- Notes about imports --- 
 I am using the module graceful-fs which patches fs to fix problems with 
@@ -20,6 +14,12 @@ Only ever saw this error when writing 54k empty files at once (using
 async concurrency of 1)
 */
 
+let delay429 = 0;
+setInterval(() => {
+  if (delay429 > 0) delay429 -= 1;
+  if (delay429 < 0) delay429 = 0;
+}, 5 * 60 * 1000);
+
 function downloadWikiArticles(articleListArr) {
   function processArticle(article, callback) {
     /* Check for file access. If the process returns an error, this means
@@ -27,10 +27,7 @@ function downloadWikiArticles(articleListArr) {
     logCounter++;
     const filePath = path.join(WIKI_DL, article + ".html");
     fs.access(filePath, fs.constants.R_OK, err => {
-      if (err)
-        console.log(
-          `${logCounter}/${articleListArr.length} | downloading ${article}`
-        );
+      if (err) console.log(`${logCounter}/${articleListArr.length} | downloading ${article}`);
       else console.log("skipping", article);
       err ? getArticle(article, callback) : callback();
     });
@@ -40,27 +37,26 @@ function downloadWikiArticles(articleListArr) {
   function getArticle(article, callback) {
     const url = MEDIA_WIKI + article;
     const filePath = path.join(WIKI_DL, article + ".html");
-    download(url)
-      .then(html => fs.writeFile(filePath, html, callback))
-      .catch(err => {
-        // Push article back on the queue if it is a 429 (too many requests)
-        if (err.statusCode === 429) {
-          console.log("pushing", article, "back on the queue");
-          queue.push(article);
-        }
-        console.log("   ", err.statusCode, article);
+    download(url).then(html => fs.writeFile(filePath, html, callback)).catch(err => {
+      // Push article back on the queue if it is a 429 (too many requests)
+      if (err.statusCode === 429) {
+        console.log("pushing", article, "back on the queue");
+        if (delay429 < 3) delay429 += 1;
+        queue.push(article);
+      }
+      console.log("   ", err.statusCode, article);
 
-        // Write error out to file
-        if (LOG_MISSING) {
-          const ERR_FILE = path.join(__dirname, "missing_articles.txt");
-          fs.appendFile(ERR_FILE, `${err.statusCode} ${article}\n`, err => {
-            if (err) console.log("problems appending to error file", err);
-            callback();
-          });
-        } else {
-          callback();
-        }
-      });
+      // Write error out to file
+      if (LOG_MISSING) {
+        const ERR_FILE = path.join(__dirname, "missing_articles.txt");
+        fs.appendFile(ERR_FILE, `${err.statusCode} ${article}\n`, err => {
+          if (err) console.log("problems appending to error file", err);
+          setTimeout(callback, 1000 * delay429);
+        });
+      } else {
+        setTimeout(callback, 1000 * delay429);
+      }
+    });
   }
 
   /* Initialize a queue that limits concurrent downloads. The queue will 
@@ -70,6 +66,7 @@ function downloadWikiArticles(articleListArr) {
   queue.push(articleListArr);
   queue.drain = () => {
     console.log("All articles downloaded");
+    process.exit();
   };
 }
 

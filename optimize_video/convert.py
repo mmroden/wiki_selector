@@ -1,4 +1,8 @@
-# Reno McKenzie
+# Mass converts a folder of video files to the following spec:
+#   15FPS, constant rate factor of 32, backwards compat to all devices (yuv420p)
+#   6 reference frames (default recommended), 720:y (scale appropriately),
+#   audio is untouched
+# In most cases, this shrinks videos well for Pi and mobile use.
 import os, subprocess, sys, shutil
 
 inDir  = sys.argv[1]

@@ -51,7 +51,5 @@ module.exports = {
   cleanUrl,
   getFilename,
   cleanListOfLinks,
-  prependUrl,
-  cssIds,
-  cssClasses
+  prependUrl
 };
