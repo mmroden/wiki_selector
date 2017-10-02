@@ -1,0 +1,80 @@
+<html ng-app="ZimIndex">
+
+<head>
+  <meta charset="utf-8">
+  <title>Table of Contents</title>
+  <script src="article_list.js"></script>
+  <script src="angular.min.js"></script>
+  <style>
+    body {
+      background: #f6f6f6;
+    }
+
+    .navbar {
+      text-align: center;
+      margin: 30px 0;
+    }
+
+    ul {
+      list-style: none;
+    }
+
+    .navbar li {
+      display: inline;
+      cursor: pointer;
+      color: #1177ee;
+    }
+
+    .content {
+      padding-top: 10px;
+      width: 550px;
+      margin: 0 auto;
+    }
+
+    .content li {
+      margin: 5px 0;
+    }
+
+    .content a {
+      color: #1177ee;
+    }
+  </style>
+</head>
+
+<body>
+  <div ng-controller="HomeCtrl">
+    <div class="navbar">
+      <ul>
+        <li ng-repeat="letter in navbar" ng-click="changeLetter()">
+          {{letter}}
+        </li>
+      </ul>
+    </div>
+    <div class="content">
+      <ul>
+        <li ng-repeat="article in selectedList track by $index">
+          <a href="{{ article }}.html">{{ article }}</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <script>
+    var app = angular.module('ZimIndex', []);
+    app.controller('HomeCtrl', ['$scope', function ($scope) {
+      $scope.current;
+      $scope.selectedList = [];
+      $scope.articles = articles;
+      $scope.navbar = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K",
+        "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y",
+        "Z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+      $scope.changeLetter = function () {
+        $scope.current = this.letter;
+        $scope.selectedList = $scope.articles.filter(function (i, idx) {
+          return i[0] === $scope.current;
+        });
+      }
+    }]);
+  </script>
+</body>
+
+</html>
