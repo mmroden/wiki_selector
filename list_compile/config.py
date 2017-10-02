@@ -1,12 +1,8 @@
 import os
 
 
-ftp_site = os.environ.get('FTP_SITE', 'wp1.kiwix.org')
-ftp_user = os.environ.get('FTP_USER', 'wp1')
-ftp_pass = os.environ.get('FTP_PASS')  # going to need to get one of these
-ftp_port = int(os.environ.get('FTP_PORT', 20))
-
-which_wiki = os.environ.get('WHICH_WIKI', 'enwiki_2016-06')
+metadata_location = os.environ.get('METADATA_LOCATION', 'http://download.kiwix.org/wp1/')
+which_wiki = os.environ.get('WHICH_WIKI', 'enwiki_2017-07/')
 
 acceptable_epsilon = os.environ.get('EPSILON', 20)  # allowed slippage between pages and all
 
@@ -39,3 +35,12 @@ emphasized_projects = os.environ.get('EMPHASIZED_PROJECTS', default_projects)
 min_number_emphasized_articles = int(os.environ.get("MIN_EMPH", 20))
 
 excluded_projects = ()  # "Chemistry", "Professional_wrestling", "Pornography")  # selected somewhat arbitrarily
+
+'''
+# as of August 2017, the ftp access for wiki metadata from kiwix is no longer online.
+ftp_site = os.environ.get('FTP_SITE', 'wp1.kiwix.org')
+ftp_user = os.environ.get('FTP_USER', 'wp1')
+ftp_pass = os.environ.get('FTP_PASS')  # going to need to get one of these
+ftp_port = int(os.environ.get('FTP_PORT', 20))
+
+'''

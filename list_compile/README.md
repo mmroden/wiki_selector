@@ -15,15 +15,9 @@ download it by using the retrieve_files.py file:
 
     python3 retrieve_files.py
 
-Please note that you will need to set these environment variables:
+The default wiki is set to `enwiki_2017-07/`-- to update, change the environment variable `WHICH_WIKI`:
 
-    FTP_PASS: needed to download files from the kiwix site.  FTP_USER and FTP_SITE are already set by default.
-    WHICH_WIKI: whether you want English, French, etc.  A complete list can be found on that FTP site.
-
-(Why environment variables, and not some other way of passing parameters?  Using environment variables
-as a configuration system is a pattern that I'm using elsewhere to great effect with Docker-based image
-deploys via Rancher.  It may not be the Right Thing to do here, but it is easy, I'm familiar with
-it, and it works.)
+    export WHICH_WIKI=cawiki_2017-07/  # for example
 
 The simple, simple way is to run print_list_by_score.py:
 
